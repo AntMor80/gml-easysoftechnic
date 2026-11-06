@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
-import { MapView, type BaseLayer } from './map/MapView';
+import { MapView, BASE_LABELS, type BaseLayer } from './map/MapView';
 import { initialState, reducer } from './lib/state';
 import { loadFile } from './lib/loadFile';
 import { FilesPanel } from './panels/FilesPanel';
@@ -68,9 +68,9 @@ export function App() {
         <div className="brand">GML <span>EasySoftechnic</span></div>
         <div className="layers">
           <select value={base} onChange={(e) => setBase(e.target.value as BaseLayer)} aria-label="Mapa base">
-            <option value="pnoa">Ortofoto PNOA</option>
-            <option value="mtn">Mapa topográfico IGN</option>
-            <option value="osm">OpenStreetMap</option>
+            {(Object.keys(BASE_LABELS) as BaseLayer[]).map((k) => (
+              <option key={k} value={k}>{BASE_LABELS[k]}</option>
+            ))}
           </select>
           <label title="Las parcelas del Catastro aparecen al acercarse a escala de calle"><input type="checkbox" checked={catastro} onChange={(e) => setCatastro(e.target.checked)} /> Catastro (al acercar)</label>
           <button onClick={() => setFitKey((k) => k + 1)} disabled={!state.items.length}>Ver todo</button>

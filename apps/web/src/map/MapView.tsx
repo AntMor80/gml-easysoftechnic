@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import OlMap from 'ol/Map';
 import View from 'ol/View';
 import TileLayer from 'ol/layer/Tile';
+import LayerGroup from 'ol/layer/Group';
+import type Layer from 'ol/layer/Layer';
 import VectorLayer from 'ol/layer/Vector';
 import VectorSource from 'ol/source/Vector';
 import OSM from 'ol/source/OSM';
@@ -21,7 +23,16 @@ import type { Item, Role } from '../lib/state';
 for (const [code, def] of Object.entries(CRS_DEFS)) proj4.defs(`EPSG:${code}`, def.proj4);
 register(proj4);
 
-export type BaseLayer = 'pnoa' | 'osm' | 'mtn';
+export type BaseLayer = 'pnoa' | 'pnoaNombres' | 'ignBase' | 'catastro' | 'osm' | 'blanco';
+
+export const BASE_LABELS: Record<BaseLayer, string> = {
+  pnoa: 'Ortofoto PNOA',
+  pnoaNombres: 'Ortofoto PNOA con calles y nombres',
+  ignBase: 'Callejero IGN (mapa base)',
+  catastro: 'Catastro (como fondo)',
+  osm: 'OpenStreetMap',
+  blanco: 'Sin fondo',
+};
 
 /**
  * Teselas en caché (WMTS) del IGN: se sirven ya generadas y cargan mucho más rápido
@@ -38,10 +49,32 @@ const ignWmts = (service: string, layer: string, format: string, maxZoom: number
     }),
   });
 
-const BASES: Record<BaseLayer, () => TileLayer> = {
-  pnoa: () => ignWmts('pnoa-ma', 'OI.OrthoimageCoverage', 'image/jpeg', 20, 'PNOA © Instituto Geográfico Nacional'),
-  mtn: () => ignWmts('ign-base', 'IGNBaseTodo', 'image/jpeg', 17, 'Mapa base © Instituto Geográfico Nacional'),
-  osm: () => new TileLayer({ preload: 2, source: new OSM() }),
+const CATASTRO_WMS = 'https://ovc.catastro.meh.es/Cartografia/WMS/ServidorWMS.aspx';
+const CATASTRO_PARAMS = { SERVICE: 'WMS', VERSION: '1.1.1', LAYERS: 'Catastro', STYLES: '', FORMAT: 'image/png', TRANSPARENT: 'TRUE' };
+// Servicio INSPIRE del Catastro: se usa como respaldo si el WMS principal falla.
+const CATASTRO_INSPIRE_WMS = 'https://ovc.catastro.meh.es/cartografia/INSPIRE/spadgcwms.aspx';
+const CATASTRO_INSPIRE_PARAMS = { SERVICE: 'WMS', VERSION: '1.1.1', LAYERS: 'CP.CadastralParcel,BU.Building', STYLES: '', FORMAT: 'image/png', TRANSPARENT: 'TRUE' };
+const IGN = '© Instituto Geográfico Nacional';
+const BASES: Record<BaseLayer, () => Layer[]> = {
+  pnoa: () => [ignWmts('pnoa-ma', 'OI.OrthoimageCoverage', 'image/jpeg', 20, `PNOA ${IGN}`)],
+  pnoaNombres: () => [
+    ignWmts('pnoa-ma', 'OI.OrthoimageCoverage', 'image/jpeg', 20, `PNOA ${IGN}`),
+    // Capa transparente con viales, nombres y toponimia del IGN, pensada para ir sobre la ortofoto.
+    ignWmts('ign-base', 'IGNBaseOrto', 'image/png', 18, `Mapa base ${IGN}`),
+  ],
+  ignBase: () => [ignWmts('ign-base', 'IGNBaseTodo', 'image/jpeg', 18, `Mapa base ${IGN}`)],
+  catastro: () => [
+    new ImageLayer({
+      source: new ImageWMS({
+        url: CATASTRO_WMS,
+        params: { ...CATASTRO_PARAMS, TRANSPARENT: 'FALSE' },
+        ratio: 1,
+        attributions: 'Dirección General del Catastro',
+      }),
+    }),
+  ],
+  osm: () => [new TileLayer({ preload: 2, source: new OSM() })],
+  blanco: () => [],
 };
 
 const COLORS: Record<Role, string> = { parcela: '#1f6feb', edificio: '#d9480f', piscina: '#0ca678', referencia: '#e03131' };
@@ -70,15 +103,13 @@ export function MapView({ items, epsg, selected, markers, base, catastro, onSele
   const div = useRef<HTMLDivElement>(null);
   const map = useRef<OlMap>();
   const vector = useRef(new VectorSource());
-  const baseLayer = useRef<TileLayer>();
+  const baseLayer = useRef<LayerGroup>();
   // El Catastro se pide como una sola imagen por vista (menos peticiones que en teselas).
   const catLayer = useRef(
     new ImageLayer({
       source: new ImageWMS({
-        url: 'https://ovc.catastro.meh.es/Cartografia/WMS/ServidorWMS.aspx',
-        // Versión 1.1.1 y TRANSPARENT en mayúsculas: es lo que el servidor del Catastro
-        // acepta sin problemas en EPSG:3857.
-        params: { SERVICE: 'WMS', VERSION: '1.1.1', LAYERS: 'Catastro', STYLES: '', FORMAT: 'image/png', TRANSPARENT: 'TRUE' },
+        url: CATASTRO_WMS,
+        params: CATASTRO_PARAMS,
         ratio: 1,
         attributions: 'Dirección General del Catastro',
       }),
@@ -114,7 +145,17 @@ export function MapView({ items, epsg, selected, markers, base, catastro, onSele
     const src = catLayer.current.getSource()!;
     src.on('imageloadstart', () => setCatStatus('loading'));
     src.on('imageloadend', () => setCatStatus('ok'));
-    src.on('imageloaderror', () => setCatStatus('error'));
+    let fallback = false;
+    src.on('imageloaderror', () => {
+      if (!fallback) {
+        // Primer fallo: probamos el servicio INSPIRE del Catastro antes de dar error.
+        fallback = true;
+        src.setUrl(CATASTRO_INSPIRE_WMS);
+        src.updateParams(CATASTRO_INSPIRE_PARAMS);
+        return;
+      }
+      setCatStatus('error');
+    });
     m.getView().on('change:resolution', () => setZoom(m.getView().getZoom() ?? 0));
     map.current = m;
     return () => m.setTarget(undefined);
@@ -123,8 +164,7 @@ export function MapView({ items, epsg, selected, markers, base, catastro, onSele
   useEffect(() => {
     const m = map.current!;
     if (baseLayer.current) m.removeLayer(baseLayer.current);
-    baseLayer.current = BASES[base]();
-    baseLayer.current.setZIndex(0);
+    baseLayer.current = new LayerGroup({ layers: BASES[base](), zIndex: 0 });
     m.addLayer(baseLayer.current);
   }, [base]);
 
