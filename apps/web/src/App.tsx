@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import { MapView, BASE_LABELS, type BaseLayer } from './map/MapView';
+import { HISTORIC_FALLBACK, OVERLAY_LABELS, loadHistoricFlights, type OverlayId } from './map/overlays';
 import { initialState, reducer } from './lib/state';
 import { loadFile } from './lib/loadFile';
 import { FilesPanel } from './panels/FilesPanel';
@@ -25,6 +26,18 @@ export function App() {
   const [tab, setTab] = useState<Tab>('files');
   const [base, setBase] = useState<BaseLayer>('pnoa');
   const [catastro, setCatastro] = useState(true);
+  const [overlays, setOverlays] = useState<Record<OverlayId, boolean>>({ historica: false, relieve: false, curvas: false, limites: false });
+  const [flights, setFlights] = useState(HISTORIC_FALLBACK);
+  const [historic, setHistoric] = useState(HISTORIC_FALLBACK[0]!.name);
+  const [historicOpacity, setHistoricOpacity] = useState(1);
+  useEffect(() => {
+    if (!overlays.historica || flights !== HISTORIC_FALLBACK) return;
+    void loadHistoricFlights().then((list) => {
+      setFlights(list);
+      if (!list.some((f) => f.name === historic)) setHistoric(list[0]!.name);
+    });
+  }, [overlays.historica, flights, historic]);
+  const activeOverlays = Object.values(overlays).filter(Boolean).length + (catastro ? 1 : 0);
   const [fitKey, setFitKey] = useState(0);
   const [dragging, setDragging] = useState(false);
   const input = useRef<HTMLInputElement>(null);
@@ -72,13 +85,29 @@ export function App() {
               <option key={k} value={k}>{BASE_LABELS[k]}</option>
             ))}
           </select>
-          <label title="Las parcelas del Catastro aparecen al acercarse a escala de calle"><input type="checkbox" checked={catastro} onChange={(e) => setCatastro(e.target.checked)} /> Catastro (al acercar)</label>
+          <details className="overlay-menu">
+            <summary>Capas{activeOverlays ? ` (${activeOverlays})` : ''}</summary>
+            <div className="overlay-list">
+              <label title="Las parcelas del Catastro aparecen al acercarse a escala de calle"><input type="checkbox" checked={catastro} onChange={(e) => setCatastro(e.target.checked)} /> Catastro (al acercar)</label>
+              {(Object.keys(OVERLAY_LABELS) as OverlayId[]).map((id) => (
+                <label key={id}><input type="checkbox" checked={overlays[id]} onChange={(e) => setOverlays((o) => ({ ...o, [id]: e.target.checked }))} /> {OVERLAY_LABELS[id]}</label>
+              ))}
+              {overlays.historica && (
+                <div className="historic">
+                  <select value={historic} onChange={(e) => setHistoric(e.target.value)} aria-label="Vuelo histórico">
+                    {flights.map((f) => <option key={f.name} value={f.name}>{f.title}</option>)}
+                  </select>
+                  <label>Transparencia <input type="range" min={0} max={1} step={0.05} value={1 - historicOpacity} onChange={(e) => setHistoricOpacity(1 - Number(e.target.value))} /></label>
+                </div>
+              )}
+            </div>
+          </details>
           <button onClick={() => setFitKey((k) => k + 1)} disabled={!state.items.length}>Ver todo</button>
         </div>
         <div className="credits">{DEV_MODE ? 'Modo desarrollo · sin cobro' : 'Créditos'}</div>
       </header>
       <main>
-        <MapView items={state.items} epsg={state.epsg} selected={state.selected} markers={markers} base={base} catastro={catastro} fitKey={fitKey} onSelect={(uid) => dispatch({ type: 'select', uid })} />
+        <MapView items={state.items} epsg={state.epsg} selected={state.selected} markers={markers} base={base} catastro={catastro} overlays={overlays} historic={historic} historicOpacity={historicOpacity} fitKey={fitKey} onSelect={(uid) => dispatch({ type: 'select', uid })} />
         <aside>
           <nav>
             {TABS.map((t) => <button key={t.id} className={t.id === tab ? 'on' : ''} onClick={() => setTab(t.id)}>{t.label}</button>)}

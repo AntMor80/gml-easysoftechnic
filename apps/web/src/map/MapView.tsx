@@ -19,6 +19,7 @@ import { ScaleLine } from 'ol/control';
 import proj4 from 'proj4';
 import { CRS_DEFS, closeRing } from '@gml/core';
 import type { Item, Role } from '../lib/state';
+import { historicLayer, makeOverlay, type OverlayId } from './overlays';
 
 for (const [code, def] of Object.entries(CRS_DEFS)) proj4.defs(`EPSG:${code}`, def.proj4);
 register(proj4);
@@ -94,12 +95,15 @@ interface Props {
   markers: [number, number][];
   base: BaseLayer;
   catastro: boolean;
+  overlays: Record<OverlayId, boolean>;
+  historic: string;
+  historicOpacity: number;
   onSelect: (uid?: string) => void;
   onMapClick?: (p: [number, number]) => void;
   fitKey: number;
 }
 
-export function MapView({ items, epsg, selected, markers, base, catastro, onSelect, onMapClick, fitKey }: Props) {
+export function MapView({ items, epsg, selected, markers, base, catastro, overlays, historic, historicOpacity, onSelect, onMapClick, fitKey }: Props) {
   const div = useRef<HTMLDivElement>(null);
   const map = useRef<OlMap>();
   const vector = useRef(new VectorSource());
@@ -169,6 +173,37 @@ export function MapView({ items, epsg, selected, markers, base, catastro, onSele
   }, [base]);
 
   useEffect(() => catLayer.current.setVisible(catastro), [catastro]);
+
+  // Capas superpuestas: se crean la primera vez que se activan y luego solo se muestran u ocultan.
+  const overlayLayers = useRef<Partial<Record<OverlayId, Layer>>>({});
+  useEffect(() => {
+    const m = map.current!;
+    for (const id of Object.keys(overlays) as OverlayId[]) {
+      if (id === 'historica') continue;
+      let l = overlayLayers.current[id];
+      if (overlays[id] && !l) {
+        l = makeOverlay(id);
+        overlayLayers.current[id] = l;
+        m.addLayer(l);
+      }
+      l?.setVisible(overlays[id]);
+    }
+  }, [overlays]);
+
+  const histLayer = useRef<ImageLayer<ImageWMS>>();
+  useEffect(() => {
+    const m = map.current!;
+    if (histLayer.current) m.removeLayer(histLayer.current);
+    histLayer.current = undefined;
+    if (overlays.historica && historic) {
+      histLayer.current = historicLayer(historic);
+      histLayer.current.setOpacity(historicOpacity);
+      m.addLayer(histLayer.current);
+    }
+    // La opacidad se ajusta aparte para no recargar la imagen al mover el control.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [overlays.historica, historic]);
+  useEffect(() => histLayer.current?.setOpacity(historicOpacity), [historicOpacity]);
 
   useEffect(() => {
     const src = vector.current;
