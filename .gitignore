@@ -5,5 +5,5 @@ dist/
 .env.*
 coverage/
 __pycache__/
-test/.out/
+packages/core/test/.out/
 packages/core/test/fixtures/real/
