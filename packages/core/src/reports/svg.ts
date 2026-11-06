@@ -1,5 +1,5 @@
 import { bbox, closeRing } from '../geometry.js';
-import type { Polygon } from '../types.js';
+import type { Point, Polygon } from '../types.js';
 
 export interface PlanLayer {
   polygons: Polygon[];
@@ -8,6 +8,8 @@ export interface PlanLayer {
   /** Numerar los vértices del exterior. */
   numberVertices?: boolean;
   label?: string;
+  /** Puntos a señalar (errores) con un círculo. */
+  markers?: Point[];
 }
 
 /**
@@ -25,7 +27,7 @@ export function planSvg(layers: PlanLayer[], width = 500, height = 360): string 
   const X = (x: number) => (ox + (x - minx) * s).toFixed(1);
   const Y = (y: number) => (height - oy - (y - miny) * s).toFixed(1);
   const parts: string[] = [];
-  for (const l of layers) {
+  layers.forEach((l, li) => {
     for (const p of l.polygons) {
       const d = [p.exterior, ...p.interiors]
         .map((r) => 'M' + closeRing(r).map(([x, y]) => `${X(x)} ${Y(y)}`).join('L') + 'Z')
@@ -35,9 +37,14 @@ export function planSvg(layers: PlanLayer[], width = 500, height = 360): string 
         const ring = closeRing(p.exterior).slice(0, -1);
         ring.forEach(([x, y], i) => {
           parts.push(`<circle cx="${X(x)}" cy="${Y(y)}" r="2.5" fill="${l.stroke}"/>`);
-          parts.push(`<text x="${Number(X(x)) + 4}" y="${Number(Y(y)) - 4}" font-size="9" font-family="Helvetica" fill="#222">${i + 1}</text>`);
+          parts.push(`<text x="${Number(X(x)) + 4}" y="${Number(Y(y)) - 4 + li * 11}" font-size="9" font-family="Helvetica" fill="${l.stroke}">${i + 1}</text>`);
         });
       }
+    }
+  });
+  for (const l of layers) {
+    for (const [x, y] of l.markers ?? []) {
+      parts.push(`<circle cx="${X(x)}" cy="${Y(y)}" r="7" fill="none" stroke="#c0392b" stroke-width="2"/>`);
     }
   }
   // escala gráfica redondeada

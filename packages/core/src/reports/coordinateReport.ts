@@ -4,16 +4,16 @@ import { areaSummary, vertexTable } from '../io/csv.js';
 import type { ReportData, Person } from './data.js';
 import { planSvg } from './svg.js';
 
-const nf = (n: number, d = 2) => n.toLocaleString('es-ES', { minimumFractionDigits: d, maximumFractionDigits: d });
+export const nf = (n: number, d = 2) => n.toLocaleString('es-ES', { minimumFractionDigits: d, maximumFractionDigits: d });
 /** Coordenadas sin separador de miles, como en los listados técnicos. */
-const cf = (n: number, d = 2) => n.toFixed(d).replace('.', ',');
+export const cf = (n: number, d = 2) => n.toFixed(d).replace('.', ',');
 
 export function fechaLarga(iso?: string): string {
   const d = iso ? new Date(iso) : new Date();
   return d.toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' });
 }
 
-function personBlock(title: string, p?: Person): Content[] {
+export function personBlock(title: string, p?: Person): Content[] {
   if (!p) return [];
   const lines = [
     p.nombre,

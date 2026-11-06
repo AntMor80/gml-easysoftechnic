@@ -5,3 +5,4 @@ export { toShapefileZip, esriPrj } from './shapefile.js';
 export { toXlsx } from './xlsx.js';
 export type { Sheet, Cell } from './xlsx.js';
 export { coordinatesWorkbook } from './coordinatesWorkbook.js';
+export { toGeoPackage } from './geopackage.js';

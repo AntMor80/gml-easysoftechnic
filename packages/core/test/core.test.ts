@@ -181,3 +181,11 @@ describe('coordenadas', () => {
     expect(r[1]).toBeCloseTo(48);
   });
 });
+
+describe('autointersección', () => {
+  it('sitúa el error en el punto de cruce real', () => {
+    const hits = selfIntersections([[0, 0], [10, 10], [10, 0], [0, 10], [0, 0]]);
+    expect(hits[0]![0]).toBeCloseTo(5);
+    expect(hits[0]![1]).toBeCloseTo(5);
+  });
+});

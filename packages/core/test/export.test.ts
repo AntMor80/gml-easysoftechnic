@@ -45,3 +45,18 @@ describe('exportación', () => {
     writeFileSync('test/.out/coordenadas.xlsx', coordinatesWorkbook(feats, 25830));
   });
 });
+
+import initSqlJs from 'sql.js';
+import { toGeoPackage } from '../src/index.js';
+
+describe('GeoPackage', () => {
+  it('crea una capa de polígonos legible', async () => {
+    const SQL = await initSqlJs();
+    const bytes = toGeoPackage(SQL, feats, 25830, 'parcelas');
+    writeFileSync('test/.out/parcelas.gpkg', bytes);
+    const db = new SQL.Database(bytes);
+    const rows = db.exec('SELECT id, superficie, uso FROM parcelas ORDER BY fid')[0]!.values;
+    expect(rows).toEqual([['1234567VK1213S', 375, 'Residencial'], ['PARCELA_2', 100, null]]);
+    expect(db.exec("SELECT srs_id FROM gpkg_geometry_columns")[0]!.values[0]![0]).toBe(25830);
+  });
+});

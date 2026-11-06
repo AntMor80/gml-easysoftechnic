@@ -54,3 +54,36 @@ describe('informes', () => {
     writeFileSync('test/.out/informe_coordenadas.docx', buf);
   });
 });
+
+import { validationReportDefinition, surfaceCertificateDefinition, graphicRepresentationDefinition } from '../src/index.js';
+
+describe('documentos del trámite', () => {
+  const bad = [{ exterior: [[440000, 4474000], [440010, 4474010], [440010, 4474000], [440000, 4474010], [440000, 4474000]] as Ring, interiors: [] }];
+  it('informe de validación con errores señalados', async () => {
+    const def = validationReportDefinition({ ...data, recintos: [{ id: 'P', polygons: bad }], issues: validatePolygons(bad), archivos: ['parcela.gml'] });
+    const pdf = await renderPdf(def);
+    expect(pdf.subarray(0, 5).toString()).toBe('%PDF-');
+    writeFileSync('test/.out/informe_validacion.pdf', pdf);
+  }, 30000);
+
+  it('certificado de superficies con comparación', async () => {
+    const def = surfaceCertificateDefinition({ ...data, superficieRegistral: 560 });
+    expect(JSON.stringify(def)).toContain('+11,61 %');
+    writeFileSync('test/.out/certificado_superficies.pdf', await renderPdf(def));
+  }, 30000);
+
+  it('representación gráfica para notaría y registro', async () => {
+    const def = graphicRepresentationDefinition({
+      ...data,
+      fincaRegistral: '12345',
+      registro: 'Registro de la Propiedad n.º 1',
+      titulares: ['Titular de Prueba'],
+      colindantes: [{ lindero: 'Norte', referencia: '1234568VK1213S', titular: 'Vecino' }],
+      resultantes: [
+        { id: 'Finca A', polygons: [{ exterior: square(440000, 4474000, 12.5), interiors: [] }] },
+        { id: 'Finca B', polygons: [{ exterior: square(440012.5, 4474000, 12.5), interiors: [] }] },
+      ],
+    });
+    writeFileSync('test/.out/representacion_grafica.pdf', await renderPdf(def));
+  }, 30000);
+});

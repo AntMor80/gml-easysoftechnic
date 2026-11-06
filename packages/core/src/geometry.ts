@@ -133,6 +133,14 @@ export function segmentsIntersect(a: Point, b: Point, c: Point, d: Point): boole
   return false;
 }
 
+/** Punto de corte de las rectas ab y cd (si son paralelas, el extremo más cercano). */
+export function intersectionPoint(a: Point, b: Point, c: Point, d: Point): Point {
+  const den = (a[0] - b[0]) * (c[1] - d[1]) - (a[1] - b[1]) * (c[0] - d[0]);
+  if (Math.abs(den) < 1e-12) return c;
+  const t = ((a[0] - c[0]) * (c[1] - d[1]) - (a[1] - c[1]) * (c[0] - d[0])) / den;
+  return [a[0] + t * (b[0] - a[0]), a[1] + t * (b[1] - a[1])];
+}
+
 /** Devuelve los puntos donde el anillo se corta a sí mismo (segmentos no contiguos). */
 export function selfIntersections(ring: Ring): Point[] {
   const r = closeRing(ring);
@@ -141,7 +149,7 @@ export function selfIntersections(ring: Ring): Point[] {
   for (let i = 0; i < n; i++) {
     for (let j = i + 1; j < n; j++) {
       if (j === i + 1 || (i === 0 && j === n - 1)) continue; // segmentos contiguos
-      if (segmentsIntersect(r[i]!, r[i + 1]!, r[j]!, r[j + 1]!)) hits.push(r[j]!);
+      if (segmentsIntersect(r[i]!, r[i + 1]!, r[j]!, r[j + 1]!)) hits.push(intersectionPoint(r[i]!, r[i + 1]!, r[j]!, r[j + 1]!));
     }
   }
   return hits;

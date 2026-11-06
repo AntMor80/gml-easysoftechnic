@@ -11,3 +11,6 @@ Motor común. Funciones principales:
 - `transformPoint`, `helmert2D`: husos, sistemas de referencia y catastro desplazado.
 - `toGeoJson`, `fromGeoJson`, `toKml`, `toKmz`, `toShapefileZip`, `toXlsx`, `coordinatesWorkbook`: exportación a GeoJSON, KML/KMZ, Shapefile y Excel.
 - `coordinateReportDefinition`, `coordinateReportDocx`, `planSvg`: informe de coordenadas georreferenciadas en PDF (pdfmake) y Word (docx), con plano a escala.
+- `validationReportDefinition`, `surfaceCertificateDefinition`, `graphicRepresentationDefinition`: informe de validación previa, certificado de superficies (medida frente a Catastro y Registro) y representación gráfica para notaría y registro.
+- `snapToReference`, `overlapArea`, `crossOverlaps`: ajuste de medianeras con el colindante y cálculo de solapes.
+- `toGeoPackage`: exportación a GeoPackage (con sql.js).

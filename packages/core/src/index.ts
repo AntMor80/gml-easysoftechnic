@@ -16,3 +16,4 @@ export type { VertexRow } from './io/csv.js';
 export { dxfToCatastroPackage } from './workflows/dxfPackage.js';
 export * from './export/index.js';
 export * from './reports/index.js';
+export * from './snap.js';

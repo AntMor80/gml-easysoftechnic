@@ -40,3 +40,20 @@ describe('archivos reales (ParCatGML)', () => {
     }
   });
 });
+
+import { snapToReference, overlapArea } from '../src/index.js';
+
+describe('ajuste de medianeras', () => {
+  it('encaja la vivienda 24 con la 26 y elimina el solape', () => {
+    const a = parseGml(load('24')).features[0]!.polygons;
+    const b = parseGml(load('26')).features[0]!.polygons;
+    expect(overlapArea(a[0]!, b[0]!)).toBeGreaterThan(0.03);
+    const r = snapToReference(a, b, 0.02);
+    // la esquina norte se mueve 1 cm; el vértice de la medianera solo se ajusta al milímetro
+    const big = r.moved.filter((m) => m.distance > 0.001);
+    expect(big).toHaveLength(1);
+    expect(big[0]!.distance).toBeCloseTo(0.01, 3);
+    expect(overlapArea(r.polygons[0]!, b[0]!)).toBeLessThan(1e-6);
+    expect(totalArea(r.polygons)).toBeCloseTo(58.0, 1);
+  });
+});
