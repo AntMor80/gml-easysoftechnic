@@ -14,3 +14,4 @@ export type { DxfEntity, DxfReadResult } from './io/dxf.js';
 export { vertexTable, vertexTableCsv, areaSummary } from './io/csv.js';
 export type { VertexRow } from './io/csv.js';
 export { dxfToCatastroPackage } from './workflows/dxfPackage.js';
+export * from './export/index.js';

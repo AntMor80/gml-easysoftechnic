@@ -150,7 +150,7 @@ describe('entrada de coordenadas y DXF', () => {
       parcel: { layers: ['PARCELA'], id: '1234567VK1213S', namespace: 'ES.SDGC.CP' },
       building: { layers: ['EDIFICIO'], data: { id: '1234567VK1213S', numberOfFloorsAboveGround: 1, conditionOfConstruction: 'functional' } },
     });
-    expect(pkg.files.map((f) => f.name)).toEqual(['1234567VK1213S_parcela.gml', '1234567VK1213S_edificio.gml', 'coordenadas.csv']);
+    expect(pkg.files.map((f) => f.name)).toEqual(['1234567VK1213S_parcela.gml', '1234567VK1213S_edificio.gml', 'coordenadas.csv', 'coordenadas.xlsx', 'recintos.kml']);
     expect(pkg.issues.filter((i) => i.severity === 'error')).toHaveLength(0);
     expect(pkg.summary[0]!.superficie).toBeCloseTo(900);
   });

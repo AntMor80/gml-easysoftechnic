@@ -9,3 +9,4 @@ Motor común. Funciones principales:
 - `validatePolygons`, `validateBuildingInParcel`: validación previa con las reglas del Catastro.
 - `linesToPolygons`, `polygonsToLines`, `densifyArc`: geometría.
 - `transformPoint`, `helmert2D`: husos, sistemas de referencia y catastro desplazado.
+- `toGeoJson`, `fromGeoJson`, `toKml`, `toKmz`, `toShapefileZip`, `toXlsx`, `coordinatesWorkbook`: exportación a GeoJSON, KML/KMZ, Shapefile y Excel.

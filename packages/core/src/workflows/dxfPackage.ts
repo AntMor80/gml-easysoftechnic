@@ -4,6 +4,8 @@ import { linesToPolygons, ringsToPolygons } from '../geometry.js';
 import { writeParcelGml } from '../gml/writeParcel.js';
 import { writeBuildingGml } from '../gml/writeBuilding.js';
 import { validatePolygons } from '../validate.js';
+import { coordinatesWorkbook } from '../export/coordinatesWorkbook.js';
+import { toKml } from '../export/kml.js';
 import type { Building, Issue, Parcel, ParcelNamespace, Polygon } from '../types.js';
 
 export interface DxfPackageOptions {
@@ -17,7 +19,7 @@ export interface DxfPackageOptions {
 }
 
 export interface DxfPackage {
-  files: { name: string; mime: string; content: string }[];
+  files: { name: string; mime: string; content: string | Uint8Array }[];
   issues: Issue[];
   summary: ReturnType<typeof areaSummary>;
   ignored: Record<string, number>;
@@ -60,5 +62,7 @@ export function dxfToCatastroPackage(dxfText: string, opts: DxfPackageOptions): 
   }
   const rows = vertexTable(items);
   files.push({ name: 'coordenadas.csv', mime: 'text/csv', content: vertexTableCsv(rows, { decimals: opts.coordDecimals ?? 2, epsg: opts.epsg }) });
+  files.push({ name: 'coordenadas.xlsx', mime: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', content: coordinatesWorkbook(items, opts.epsg) });
+  files.push({ name: 'recintos.kml', mime: 'application/vnd.google-earth.kml+xml', content: toKml(items, opts.epsg) });
   return { files, issues, summary: areaSummary(items), ignored: dxf.ignored, layers: dxf.layers };
 }
