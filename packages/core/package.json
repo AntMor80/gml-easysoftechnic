@@ -1,0 +1,23 @@
+{
+  "name": "@gml/core",
+  "version": "0.1.0",
+  "description": "Motor común: lectura, validación, transformación y escritura de GML catastrales",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": { ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js" } },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "fast-xml-parser": "^4.5.0",
+    "proj4": "^2.15.0"
+  },
+  "devDependencies": {
+    "@types/proj4": "^2.5.5",
+    "typescript": "^5.6.3",
+    "vitest": "^2.1.8"
+  }
+}

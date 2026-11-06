@@ -1,0 +1,12 @@
+{
+  "name": "gml-easysoftechnic",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Gestión de GML catastrales y de edificios: web, escritorio Windows y complemento QGIS",
+  "workspaces": ["packages/*", "apps/*"],
+  "scripts": {
+    "test": "npm test --workspaces --if-present",
+    "build": "npm run build --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present"
+  }
+}
