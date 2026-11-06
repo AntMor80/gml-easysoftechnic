@@ -5,7 +5,9 @@ import TileLayer from 'ol/layer/Tile';
 import VectorLayer from 'ol/layer/Vector';
 import VectorSource from 'ol/source/Vector';
 import OSM from 'ol/source/OSM';
-import TileWMS from 'ol/source/TileWMS';
+import ImageLayer from 'ol/layer/Image';
+import ImageWMS from 'ol/source/ImageWMS';
+import XYZ from 'ol/source/XYZ';
 import Feature from 'ol/Feature';
 import { MultiPolygon, Point as OlPoint } from 'ol/geom';
 import { Circle, Fill, Stroke, Style, Text } from 'ol/style';
@@ -21,10 +23,25 @@ register(proj4);
 
 export type BaseLayer = 'pnoa' | 'osm' | 'mtn';
 
+/**
+ * Teselas en caché (WMTS) del IGN: se sirven ya generadas y cargan mucho más rápido
+ * que el WMS, que dibuja cada imagen al vuelo.
+ */
+const ignWmts = (service: string, layer: string, format: string, maxZoom: number, attributions: string) =>
+  new TileLayer({
+    preload: 2,
+    source: new XYZ({
+      url: `https://www.ign.es/wmts/${service}?request=GetTile&service=WMTS&VERSION=1.0.0&Layer=${layer}&Style=default&Format=${format}&TileMatrixSet=GoogleMapsCompatible&TileMatrix={z}&TileRow={y}&TileCol={x}`,
+      maxZoom,
+      attributions,
+      crossOrigin: 'anonymous',
+    }),
+  });
+
 const BASES: Record<BaseLayer, () => TileLayer> = {
-  pnoa: () => new TileLayer({ source: new TileWMS({ url: 'https://www.ign.es/wms-inspire/pnoa-ma', params: { LAYERS: 'OI.OrthoimageCoverage', FORMAT: 'image/jpeg' }, attributions: 'PNOA © Instituto Geográfico Nacional' }) }),
-  osm: () => new TileLayer({ source: new OSM() }),
-  mtn: () => new TileLayer({ source: new TileWMS({ url: 'https://www.ign.es/wms-inspire/mapa-raster', params: { LAYERS: 'mtn_rasterizado', FORMAT: 'image/png' }, attributions: 'MTN © Instituto Geográfico Nacional' }) }),
+  pnoa: () => ignWmts('pnoa-ma', 'OI.OrthoimageCoverage', 'image/jpeg', 20, 'PNOA © Instituto Geográfico Nacional'),
+  mtn: () => ignWmts('ign-base', 'IGNBaseTodo', 'image/jpeg', 17, 'Mapa base © Instituto Geográfico Nacional'),
+  osm: () => new TileLayer({ preload: 2, source: new OSM() }),
 };
 
 const COLORS: Record<Role, string> = { parcela: '#1f6feb', edificio: '#d9480f', piscina: '#0ca678', referencia: '#e03131' };
@@ -54,9 +71,15 @@ export function MapView({ items, epsg, selected, markers, base, catastro, onSele
   const map = useRef<OlMap>();
   const vector = useRef(new VectorSource());
   const baseLayer = useRef<TileLayer>();
+  // El Catastro se pide como una sola imagen por vista (menos peticiones que en teselas).
   const catLayer = useRef(
-    new TileLayer({
-      source: new TileWMS({ url: 'https://ovc.catastro.meh.es/Cartografia/WMS/ServidorWMS.aspx', params: { LAYERS: 'Catastro', FORMAT: 'image/png', TRANSPARENT: true }, attributions: 'Dirección General del Catastro' }),
+    new ImageLayer({
+      source: new ImageWMS({
+        url: 'https://ovc.catastro.meh.es/Cartografia/WMS/ServidorWMS.aspx',
+        params: { LAYERS: 'Catastro', FORMAT: 'image/png', TRANSPARENT: true },
+        ratio: 1,
+        attributions: 'Dirección General del Catastro',
+      }),
       zIndex: 1,
       // El WMS del Catastro solo dibuja parcelas a escala de detalle; a menor zoom
       // devuelve imágenes en blanco que tapan la ortofoto.
@@ -71,7 +94,7 @@ export function MapView({ items, epsg, selected, markers, base, catastro, onSele
     const m = new OlMap({
       target: div.current!,
       layers: [catLayer.current, new VectorLayer({ source: vector.current, zIndex: 2 })],
-      view: new View({ center: transform([-3.7, 40.4], 'EPSG:4326', 'EPSG:3857'), zoom: 6, maxZoom: 22 }),
+      view: new View({ center: transform([-3.7, 40.4], 'EPSG:4326', 'EPSG:3857'), zoom: 6, maxZoom: 21 }),
       controls: [new ScaleLine()],
     });
     m.on('pointermove', (e) => {
