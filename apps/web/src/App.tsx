@@ -11,8 +11,10 @@ import { ExportPanel } from './panels/ExportPanel';
 import { ReportsPanel } from './panels/ReportsPanel';
 import { AccountPanel } from './panels/AccountPanel';
 import { useAccount } from './lib/account';
+import { LicensePanel } from './panels/LicensePanel';
+import { desktop, setDesktopModules, type DesktopLicense } from './lib/desktop';
 
-const TABS = [
+const BASE_TABS = [
   { id: 'files', label: 'Archivos' },
   { id: 'vertices', label: 'Vértices' },
   { id: 'validate', label: 'Validar' },
@@ -21,19 +23,32 @@ const TABS = [
   { id: 'reports', label: 'Informes' },
   { id: 'account', label: 'Mi cuenta' },
 ] as const;
-type Tab = (typeof TABS)[number]['id'];
+type Tab = (typeof BASE_TABS)[number]['id'];
+// En el escritorio la pestaña de cuenta y créditos se sustituye por la de licencia.
+const TABS = BASE_TABS.map((t) => (t.id === 'account' && desktop ? { ...t, label: 'Licencia' } : t));
 
 export function App() {
   const [state, dispatch] = useReducer(reducer, initialState);
   const [tab, setTab] = useState<Tab>(/cuenta|restablecer/.test(location.hash) ? 'account' : 'files');
   const account = useAccount();
+  const [lic, setLic] = useState<DesktopLicense>();
+  useEffect(() => {
+    if (!desktop) return;
+    const apply = (l: DesktopLicense) => {
+      setLic(l);
+      setDesktopModules(l.status === 'ok' ? l.modules : []);
+    };
+    void desktop.getLicense().then(apply);
+    desktop.onLicenseChanged(apply);
+    desktop.onShowLicense(() => setTab('account'));
+  }, []);
   const notify = useCallback((kind: 'info' | 'error', text: string) => dispatch({ type: 'message', kind, text }), []);
   // Avisos de cobro que lanzan los paneles (sin sesión o sin créditos): se muestran y se abre Mi cuenta.
   useEffect(() => {
     const onNotice = (e: Event) => {
       const d = (e as CustomEvent<{ kind: 'info' | 'error'; text: string; reason?: string }>).detail;
       notify(d.kind, d.text);
-      if (d.reason === 'login' || d.reason === 'credits') setTab('account');
+      if (d.reason === 'login' || d.reason === 'credits' || d.reason === 'license') setTab('account');
     };
     window.addEventListener('gml-notice', onNotice);
     return () => window.removeEventListener('gml-notice', onNotice);
@@ -119,7 +134,7 @@ export function App() {
           <button onClick={() => setFitKey((k) => k + 1)} disabled={!state.items.length}>Ver todo</button>
         </div>
         <button className="credits" onClick={() => setTab('account')}>
-          {account.online === false ? 'Modo desarrollo · sin cobro' : account.me ? `${account.me.user.credits} créditos` : account.online ? 'Entrar' : '…'}
+          {desktop ? (lic?.status === 'ok' ? `Licencia: ${lic.modules.length} módulo(s)` : 'Sin licencia') : account.online === false ? 'Modo desarrollo · sin cobro' : account.me ? `${account.me.user.credits} créditos` : account.online ? 'Entrar' : '…'}
         </button>
       </header>
       <main>
@@ -134,7 +149,7 @@ export function App() {
           {tab === 'gml' && <GmlPanel state={state} dispatch={dispatch} />}
           {tab === 'export' && <ExportPanel state={state} />}
           {tab === 'reports' && <ReportsPanel state={state} />}
-          {tab === 'account' && <AccountPanel account={account} notify={notify} />}
+          {tab === 'account' && (desktop ? <LicensePanel lic={lic} notify={notify} /> : <AccountPanel account={account} notify={notify} />)}
         </aside>
       </main>
       {state.messages.length > 0 && (

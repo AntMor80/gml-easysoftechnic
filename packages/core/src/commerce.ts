@@ -49,6 +49,16 @@ export const DESKTOP_MODULES = {
 } as const;
 export type DesktopModule = keyof typeof DESKTOP_MODULES;
 
+/** Módulo de escritorio que hace falta para cada actuación (en la web se paga con créditos). */
+export const ACTION_MODULE: Record<CreditAction, DesktopModule | null> = {
+  gmlParcela: 'gmlParcela',
+  gmlEdificio: 'gmlEdificio',
+  conversionV4: 'exportacion',
+  paqueteDxf: 'informes',
+  informe: 'informes',
+  exportacion: 'exportacion',
+};
+
 export const LICENSE_PLANS = {
   anual: { name: 'Anual', months: 12 },
   bianual: { name: 'Bianual (2 años)', months: 24 },

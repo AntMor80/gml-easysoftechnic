@@ -3,6 +3,8 @@ import react from '@vitejs/plugin-react';
 import { fileURLToPath } from 'node:url';
 
 export default defineConfig({
+  // Rutas relativas: la misma compilación sirve en Hostinger y dentro de la aplicación de escritorio (file://).
+  base: './',
   plugins: [react()],
   resolve: {
     alias: {

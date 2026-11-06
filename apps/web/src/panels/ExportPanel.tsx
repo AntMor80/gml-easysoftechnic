@@ -1,3 +1,4 @@
+import { charge } from '../lib/credits';
 import { coordinatesWorkbook, polygonsToLines, toGeoJson, toGeoPackage, toKml, toKmz, toShapefileZip, vertexTable, vertexTableCsv, writeDxf, ringsToText, type ExportFeature } from '@gml/core';
 import type { State } from '../lib/state';
 import { download } from '../lib/download';
@@ -29,7 +30,7 @@ export function ExportPanel({ state }: { state: State }) {
       <p className="hint">Exporta los recintos visibles ({items.length}) en EPSG:{E}. La exportación es gratuita.</p>
       <div className="formats">
         {formats.map((f) => (
-          <button key={f.label} disabled={!items.length} onClick={() => void f.run()}>
+          <button key={f.label} disabled={!items.length} onClick={() => void charge('exportacion').then((ok) => ok && f.run())}>
             <strong>{f.label}</strong>
             <span>{f.desc}</span>
           </button>

@@ -1,4 +1,5 @@
-import { CREDIT_COST, type CreditAction } from '@gml/core';
+import { ACTION_MODULE, CREDIT_COST, DESKTOP_MODULES, type CreditAction } from '@gml/core';
+import { desktop, hasModule } from './desktop';
 import { api } from './api';
 
 export { CREDIT_COST };
@@ -13,9 +14,15 @@ export function setDevMode(v: boolean) {
   DEV_MODE = v;
 }
 
-export type SpendResult = { ok: true; balance?: number } | { ok: false; reason: 'login' | 'credits' | 'error'; message: string };
+export type SpendResult = { ok: true; balance?: number } | { ok: false; reason: 'login' | 'credits' | 'license' | 'error'; message: string };
 
 export async function spend(action: Action): Promise<SpendResult> {
+  if (desktop) {
+    // En el escritorio no hay créditos: cada actuación necesita su módulo en la licencia.
+    const m = ACTION_MODULE[action];
+    if (!m || hasModule(m)) return { ok: true };
+    return { ok: false, reason: 'license', message: `Esta función necesita el módulo «${DESKTOP_MODULES[m]}». Actívalo en la pestaña Licencia.` };
+  }
   if (DEV_MODE || CREDIT_COST[action] === 0) return { ok: true };
   try {
     const r = await api<{ balance: number }>('/api/credits/spend', { action });

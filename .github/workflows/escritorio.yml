@@ -1,0 +1,31 @@
+# Compila el instalador de Windows de la aplicación de escritorio.
+# Se lanza a mano (pestaña Actions > "Instalador de Windows" > Run workflow) o al crear una etiqueta v*.
+# El instalador .exe queda para descargar en el resumen de la ejecución (Artifacts).
+name: Instalador de Windows
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ['v*']
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm test -w @gml/core
+      - run: npm test -w @gml/desktop
+      - run: npm run build -w @gml/web
+      - name: Crear instalador
+        working-directory: apps/desktop
+        run: npx electron-builder --win nsis --publish never
+      - uses: actions/upload-artifact@v4
+        with:
+          name: instalador-windows
+          path: apps/desktop/release/*.exe
+          if-no-files-found: error
