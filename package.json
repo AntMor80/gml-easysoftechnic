@@ -11,6 +11,6 @@
     "test": "npm test --workspaces --if-present",
     "build": "npm run build --workspaces --if-present",
     "typecheck": "npm run typecheck --workspaces --if-present",
-    "web": "npm run dev -w @gml/web -- --open"
+    "web": "node node_modules/vite/bin/vite.js apps/web --open"
   }
 }
