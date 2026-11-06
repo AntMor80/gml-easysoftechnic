@@ -1,0 +1,24 @@
+# Prueba y empaqueta el complemento de QGIS. El ZIP queda en Artifacts.
+name: Complemento de QGIS
+
+on:
+  workflow_dispatch:
+  push:
+    paths: ['plugins/qgis/**']
+
+jobs:
+  zip:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m unittest tests/test_puro.py
+        working-directory: plugins/qgis
+      - run: python empaquetar.py
+        working-directory: plugins/qgis
+      - uses: actions/upload-artifact@v4
+        with:
+          name: complemento-qgis
+          path: plugins/qgis/dist/gml_easysoftechnic.zip

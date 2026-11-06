@@ -26,7 +26,7 @@ Pruebas: `npm test -w @gml/server` (en memoria) o, con un MySQL de pruebas, `TES
 1. **Subdominio**: hPanel > Dominios > Subdominios > crear `app.easysoftechnic.com`.
 2. **Base de datos**: hPanel > Bases de datos > Administración > crear base de datos y usuario. Abrir phpMyAdmin e importar `apps/server/schema.sql`.
 3. **Correo**: crear un buzón (p. ej. `no-responder@easysoftechnic.com`) para las recuperaciones de contraseña y el envío de licencias.
-4. **Clave de licencias**: en tu PC, `npm run keys -w @gml/server`. La línea `LICENSE_PRIVATE_KEY=...` va al servidor; la clave pública se incluirá en la aplicación de escritorio.
+4. **Clave de licencias**: en tu PC, `npm run keys -w @gml/server`. La línea `LICENSE_PRIVATE_KEY=...` va al servidor; la clave pública sustituye a `apps/desktop/licencia-publica.pem` y a `plugins/qgis/gml_easysoftechnic/licencia-publica.pem`.
 5. **Aplicación Node.js**: hPanel > Sitios web > añadir sitio > *Node.js* (Web Apps), en el subdominio. Conectar el repositorio de GitHub (o subir el ZIP) y poner:
    - Versión de Node: 18 o superior
    - Comando de instalación/compilación: `npm install && npm run build:prod`

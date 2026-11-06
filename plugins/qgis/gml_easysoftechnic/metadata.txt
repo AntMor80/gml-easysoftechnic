@@ -1,0 +1,14 @@
+[general]
+name=GML EasySoftechnic
+qgisMinimumVersion=3.22
+description=Genera GML de parcela y de edificio para el Catastro desde cualquier capa, importa GML catastrales y valida geometrías.
+about=Complemento del paquete GML EasySoftechnic. Exporta entidades de QGIS a GML INSPIRE de parcela catastral (CP 4.0) y de edificio (ICUC), con orientación y densificación de curvas según el Catastro; importa GML catastrales; valida cruces, vértices duplicados y solapes. Exportar necesita la licencia del módulo «Conexión con QGIS».
+version=0.1.0
+author=EasySoftechnic
+email=info@easysoftechnic.com
+homepage=https://easysoftechnic.com
+tracker=https://easysoftechnic.com
+repository=https://easysoftechnic.com
+category=Vector
+tags=catastro,gml,inspire,parcela,edificio,icuc,españa
+experimental=False
