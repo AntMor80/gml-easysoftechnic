@@ -12,7 +12,7 @@ if errorlevel 1 (
 if not exist node_modules (
   echo Instalando dependencias por primera vez, puede tardar unos minutos...
   call npm install
-  if errorlevel 1 ( pause ^& exit /b 1 )
+  if errorlevel 1 ( pause & exit /b 1 )
 )
 echo Abriendo la aplicacion en el navegador. Cierra esta ventana para detenerla.
 call npm run web
