@@ -2,7 +2,7 @@
   "name": "gml-easysoftechnic",
   "private": true,
   "version": "0.1.0",
-  "description": "Gestión de GML catastrales y de edificios: web, escritorio Windows y complemento QGIS",
+  "description": "Gesti\u00f3n de GML catastrales y de edificios: web, escritorio Windows y complemento QGIS",
   "workspaces": [
     "packages/*",
     "apps/*"
@@ -11,6 +11,12 @@
     "test": "npm test --workspaces --if-present",
     "build": "npm run build --workspaces --if-present",
     "typecheck": "npm run typecheck --workspaces --if-present",
-    "web": "node node_modules/vite/bin/vite.js apps/web --open"
+    "web": "node node_modules/vite/bin/vite.js apps/web --open",
+    "build:prod": "npm run build -w @gml/web && npm run build -w @gml/server",
+    "start": "node apps/server/dist/server.js",
+    "server": "npm run dev -w @gml/server"
+  },
+  "engines": {
+    "node": ">=18"
   }
 }

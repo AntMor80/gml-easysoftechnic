@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { CATASTRO_UTM_ZONES, isValidCadastralReference, writeBuildingGml, writeParcelGml, type Building, type ConditionOfConstruction, type CurrentUse } from '@gml/core';
 import type { Action, State } from '../lib/state';
 import { download, safeName } from '../lib/download';
-import { spend } from '../lib/credits';
+import { charge } from '../lib/credits';
 
 const USES: { v: CurrentUse | ''; l: string }[] = [
   { v: '', l: '(sin indicar)' },
@@ -29,7 +29,7 @@ export function GmlPanel({ state, dispatch }: { state: State; dispatch: (a: Acti
   const errors = state.issues.reduce((s, x) => s + x.issues.filter((i) => i.severity === 'error').length, 0);
 
   const parcelGml = async () => {
-    if (!(await spend('gmlParcela'))) return;
+    if (!(await charge('gmlParcela'))) return;
     const xml = writeParcelGml(
       parcels.map((p) => ({ id: p.id, namespace: isValidCadastralReference(p.id) ? 'ES.SDGC.CP' : 'ES.LOCAL.CP', polygons: p.polygons })),
       { epsg: state.epsg, coordDecimals: coordDec, areaDecimals: areaDec },
@@ -38,7 +38,7 @@ export function GmlPanel({ state, dispatch }: { state: State; dispatch: (a: Acti
   };
 
   const buildingGml = async () => {
-    if (!(await spend('gmlEdificio'))) return;
+    if (!(await charge('gmlEdificio'))) return;
     const id = buildings[0]?.id ?? pools[0]?.id ?? 'EDIFICIO';
     const b: Building[] = buildings.map((x) => ({
       id: x.id,

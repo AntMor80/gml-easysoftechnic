@@ -7,3 +7,4 @@ coverage/
 __pycache__/
 packages/core/test/.out/
 packages/core/test/fixtures/real/
+!.env.example

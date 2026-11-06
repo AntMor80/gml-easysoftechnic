@@ -8,7 +8,7 @@ import {
 import type { State } from '../lib/state';
 import { download, safeName } from '../lib/download';
 import { pdfBlob } from '../lib/pdf';
-import { spend } from '../lib/credits';
+import { charge } from '../lib/credits';
 import { runValidation } from './ValidationPanel';
 
 const KEY = 'gml-easysoftechnic:autor';
@@ -69,7 +69,7 @@ export function ReportsPanel({ state }: { state: State }) {
   ];
 
   const paquete = async () => {
-    if (!(await spend('paqueteDxf'))) return;
+    if (!(await charge('paqueteDxf'))) return;
     const d = data();
     const E = state.epsg;
     const parcels = state.items.filter((i) => i.role === 'parcela');
@@ -109,7 +109,7 @@ export function ReportsPanel({ state }: { state: State }) {
       <h3>Documentos</h3>
       {refs.length === 0 && <p className="hint">Marca un recinto como «Referencia» para compararlo con el Catastro en los informes.</p>}
       {reports.map((r) => (
-        <button key={r.label} disabled={!main.length || !!busy} onClick={() => run(r.label, async () => { if (await spend('informe')) await r.go(); })}>{busy === r.label ? 'Generando…' : r.label}</button>
+        <button key={r.label} disabled={!main.length || !!busy} onClick={() => run(r.label, async () => { if (await charge('informe')) await r.go(); })}>{busy === r.label ? 'Generando…' : r.label}</button>
       ))}
       <button className="primary" disabled={!main.length || !!busy} onClick={() => run('paquete', paquete)}>{busy === 'paquete' ? 'Generando paquete…' : 'Paquete completo del trámite (ZIP)'}</button>
       <p className="hint">El paquete incluye GML de parcela y edificio, CSV, Excel, KML y los cinco documentos.</p>

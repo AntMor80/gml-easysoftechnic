@@ -1,7 +1,7 @@
 {
   "name": "@gml/core",
   "version": "0.1.0",
-  "description": "Motor común: lectura, validación, transformación y escritura de GML catastrales",
+  "description": "Motor com\u00fan: lectura, validaci\u00f3n, transformaci\u00f3n y escritura de GML catastrales",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -9,6 +9,10 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
+    },
+    "./commerce": {
+      "types": "./dist/commerce.d.ts",
+      "import": "./dist/commerce.js"
     }
   },
   "scripts": {

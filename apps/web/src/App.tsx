@@ -9,7 +9,8 @@ import { ValidationPanel } from './panels/ValidationPanel';
 import { GmlPanel } from './panels/GmlPanel';
 import { ExportPanel } from './panels/ExportPanel';
 import { ReportsPanel } from './panels/ReportsPanel';
-import { DEV_MODE } from './lib/credits';
+import { AccountPanel } from './panels/AccountPanel';
+import { useAccount } from './lib/account';
 
 const TABS = [
   { id: 'files', label: 'Archivos' },
@@ -18,12 +19,25 @@ const TABS = [
   { id: 'gml', label: 'Crear GML' },
   { id: 'export', label: 'Exportar' },
   { id: 'reports', label: 'Informes' },
+  { id: 'account', label: 'Mi cuenta' },
 ] as const;
 type Tab = (typeof TABS)[number]['id'];
 
 export function App() {
   const [state, dispatch] = useReducer(reducer, initialState);
-  const [tab, setTab] = useState<Tab>('files');
+  const [tab, setTab] = useState<Tab>(/cuenta|restablecer/.test(location.hash) ? 'account' : 'files');
+  const account = useAccount();
+  const notify = useCallback((kind: 'info' | 'error', text: string) => dispatch({ type: 'message', kind, text }), []);
+  // Avisos de cobro que lanzan los paneles (sin sesión o sin créditos): se muestran y se abre Mi cuenta.
+  useEffect(() => {
+    const onNotice = (e: Event) => {
+      const d = (e as CustomEvent<{ kind: 'info' | 'error'; text: string; reason?: string }>).detail;
+      notify(d.kind, d.text);
+      if (d.reason === 'login' || d.reason === 'credits') setTab('account');
+    };
+    window.addEventListener('gml-notice', onNotice);
+    return () => window.removeEventListener('gml-notice', onNotice);
+  }, [notify]);
   const [base, setBase] = useState<BaseLayer>('pnoa');
   const [catastro, setCatastro] = useState(true);
   const [overlays, setOverlays] = useState<Record<OverlayId, boolean>>({ historica: false, relieve: false, curvas: false, limites: false });
@@ -104,7 +118,9 @@ export function App() {
           </details>
           <button onClick={() => setFitKey((k) => k + 1)} disabled={!state.items.length}>Ver todo</button>
         </div>
-        <div className="credits">{DEV_MODE ? 'Modo desarrollo · sin cobro' : 'Créditos'}</div>
+        <button className="credits" onClick={() => setTab('account')}>
+          {account.online === false ? 'Modo desarrollo · sin cobro' : account.me ? `${account.me.user.credits} créditos` : account.online ? 'Entrar' : '…'}
+        </button>
       </header>
       <main>
         <MapView items={state.items} epsg={state.epsg} selected={state.selected} markers={markers} base={base} catastro={catastro} overlays={overlays} historic={historic} historicOpacity={historicOpacity} fitKey={fitKey} onSelect={(uid) => dispatch({ type: 'select', uid })} />
@@ -118,6 +134,7 @@ export function App() {
           {tab === 'gml' && <GmlPanel state={state} dispatch={dispatch} />}
           {tab === 'export' && <ExportPanel state={state} />}
           {tab === 'reports' && <ReportsPanel state={state} />}
+          {tab === 'account' && <AccountPanel account={account} notify={notify} />}
         </aside>
       </main>
       {state.messages.length > 0 && (
