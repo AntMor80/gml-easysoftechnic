@@ -41,6 +41,7 @@ let store: Store;
 let pay: ReturnType<typeof fakePayments>;
 let mails: { to: string; subject: string; text: string }[];
 let app: ReturnType<typeof createApp>;
+let fetched: string[];
 
 // Con TEST_DB=mysql://usuario:clave@host/base las mismas pruebas se ejecutan contra MySQL.
 const pool = process.env.TEST_DB ? mysql.createPool({ uri: process.env.TEST_DB, timezone: 'Z' }) : undefined;
@@ -54,7 +55,8 @@ beforeEach(async () => {
   } else store = new MemoryStore();
   pay = fakePayments();
   mails = [];
-  app = createApp({ cfg, store, payments: pay.p, mailer: { send: async (to, subject, text) => void mails.push({ to, subject, text }) } });
+  fetched = [];
+  app = createApp({ cfg, store, payments: pay.p, fetchText: async (url) => (fetched.push(url), '<ok/>'), mailer: { send: async (to, subject, text) => void mails.push({ to, subject, text }) } });
 });
 
 async function register(email = 'ana@ejemplo.es') {
@@ -179,6 +181,21 @@ describe('licencias de escritorio', () => {
     const u = await store.createUser({ email: 'c@e.es', name: '', passwordHash: 'x', credits: 0 });
     await store.createLicense({ key: 'GML-OLD1-OLD1-OLD1-OLD1', userId: u.id, modules: ['qgis'], plan: 'anual', expiresAt: new Date(Date.now() - 1000) });
     expect((await request(app).post('/api/licenses/activate').send({ key: 'GML-OLD1-OLD1-OLD1-OLD1', machineId: 'X' })).status).toBe(403);
+  });
+});
+
+describe('intermediario del Catastro', () => {
+  it('solo con sesión, solo direcciones fijas y con caché', async () => {
+    expect((await request(app).get('/api/catastro?kind=datos&refcat=1234567VK1213S')).status).toBe(401);
+    const a = await register();
+    const r = await a.get('/api/catastro?kind=colindantes&refcat=1234567VK1213S&epsg=25830');
+    expect(r.status).toBe(200);
+    expect(r.text).toBe('<ok/>');
+    expect(fetched[0]).toMatch(/^https:\/\/ovc\.catastro\.meh\.es\/INSPIRE\/wfsCP\.aspx\?.*GetNeighbourParcel.*refcat=1234567VK1213S/);
+    await a.get('/api/catastro?kind=colindantes&refcat=1234567VK1213S&epsg=25830');
+    expect(fetched).toHaveLength(1);
+    expect((await a.get('/api/catastro?kind=datos&refcat=http://evil')).status).toBe(400);
+    expect((await a.get('/api/catastro?kind=otra')).status).toBe(400);
   });
 });
 

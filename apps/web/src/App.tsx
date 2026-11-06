@@ -10,6 +10,7 @@ import { GmlPanel } from './panels/GmlPanel';
 import { ExportPanel } from './panels/ExportPanel';
 import { ReportsPanel } from './panels/ReportsPanel';
 import { AccountPanel } from './panels/AccountPanel';
+import { CatastroPanel } from './panels/CatastroPanel';
 import { useAccount } from './lib/account';
 import { LicensePanel } from './panels/LicensePanel';
 import { desktop, setDesktopModules, type DesktopLicense } from './lib/desktop';
@@ -21,6 +22,7 @@ const BASE_TABS = [
   { id: 'gml', label: 'Crear GML' },
   { id: 'export', label: 'Exportar' },
   { id: 'reports', label: 'Informes' },
+  { id: 'catastro', label: 'Catastro' },
   { id: 'account', label: 'Mi cuenta' },
 ] as const;
 type Tab = (typeof BASE_TABS)[number]['id'];
@@ -68,6 +70,7 @@ export function App() {
   }, [overlays.historica, flights, historic]);
   const activeOverlays = Object.values(overlays).filter(Boolean).length + (catastro ? 1 : 0);
   const [fitKey, setFitKey] = useState(0);
+  const [clicked, setClicked] = useState<[number, number]>();
   const [dragging, setDragging] = useState(false);
   const input = useRef<HTMLInputElement>(null);
 
@@ -138,7 +141,7 @@ export function App() {
         </button>
       </header>
       <main>
-        <MapView items={state.items} epsg={state.epsg} selected={state.selected} markers={markers} base={base} catastro={catastro} overlays={overlays} historic={historic} historicOpacity={historicOpacity} fitKey={fitKey} onSelect={(uid) => dispatch({ type: 'select', uid })} />
+        <MapView items={state.items} epsg={state.epsg} selected={state.selected} markers={markers} base={base} catastro={catastro} overlays={overlays} historic={historic} historicOpacity={historicOpacity} fitKey={fitKey} onSelect={(uid) => dispatch({ type: 'select', uid })} onMapClick={tab === 'catastro' ? setClicked : undefined} />
         <aside>
           <nav>
             {TABS.map((t) => <button key={t.id} className={t.id === tab ? 'on' : ''} onClick={() => setTab(t.id)}>{t.label}</button>)}
@@ -149,6 +152,7 @@ export function App() {
           {tab === 'gml' && <GmlPanel state={state} dispatch={dispatch} />}
           {tab === 'export' && <ExportPanel state={state} />}
           {tab === 'reports' && <ReportsPanel state={state} />}
+          {tab === 'catastro' && <CatastroPanel state={state} dispatch={dispatch} clicked={clicked} onFit={() => setFitKey((k) => k + 1)} />}
           {tab === 'account' && (desktop ? <LicensePanel lic={lic} notify={notify} /> : <AccountPanel account={account} notify={notify} />)}
         </aside>
       </main>

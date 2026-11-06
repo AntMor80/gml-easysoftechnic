@@ -83,6 +83,14 @@ ipcMain.handle('license:deactivate', async () => {
   save(undefined);
   return changed();
 });
+// Consultas a los servicios públicos del Catastro: solo a su servidor y por HTTPS.
+ipcMain.handle('catastro:fetch', async (_e, url) => {
+  const u = new URL(String(url));
+  if (u.protocol !== 'https:' || u.hostname !== 'ovc.catastro.meh.es') throw new Error('Dirección no permitida');
+  const res = await fetch(u, { signal: AbortSignal.timeout(20000), headers: { 'User-Agent': 'GML-EasySoftechnic' } });
+  if (!res.ok) throw new Error(`El Catastro no responde (error ${res.status})`);
+  return res.text();
+});
 ipcMain.handle('shop:open', () => shell.openExternal(`${SERVER}/#cuenta`));
 
 function buildMenu(lic) {

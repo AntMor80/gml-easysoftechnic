@@ -4,7 +4,10 @@
     "noEmit": true,
     "types": ["node"],
     "baseUrl": ".",
-    "paths": { "@gml/core/commerce": ["../../packages/core/src/commerce.ts"] }
+    "paths": {
+      "@gml/core/commerce": ["../../packages/core/src/commerce.ts"],
+      "@gml/core/catastro-urls": ["../../packages/core/src/catastroUrls.ts"]
+    }
   },
   "include": ["src", "test"]
 }

@@ -70,6 +70,7 @@ class GmlEasySoftechnic:
             ("Exportar GML de parcela…", self.export_parcel, True),
             ("Exportar GML de edificio…", self.export_building, True),
             ("Importar GML catastral…", self.import_gml, False),
+            ("Cargar parcela y colindantes del Catastro…", self.load_catastro, True),
             ("Validar entidades seleccionadas", self.validate_selection, True),
             ("Licencia…", self.show_license, False),
         ]:
@@ -303,6 +304,46 @@ class GmlEasySoftechnic:
             self.iface.mapCanvas().setExtent(self.iface.mapCanvas().mapSettings().layerExtentToOutputExtent(layer, layer.extent()))
             self.iface.mapCanvas().refresh()
             self.msg("Importado %s (%d entidades)" % (name, layer.featureCount()), "ok")
+
+    # ---------- Catastro ----------
+    def load_catastro(self):
+        from qgis.PyQt.QtWidgets import QInputDialog
+        import re
+        import tempfile
+        import urllib.request
+
+        rc, ok = QInputDialog.getText(self.iface.mainWindow(), "Catastro", "Referencia catastral (14 o 20 caracteres):")
+        rc = re.sub(r"\s+", "", rc or "").upper()
+        if not ok or not rc:
+            return
+        if not re.fullmatch(r"[0-9A-Z]{14}([0-9A-Z]{6})?", rc):
+            self.msg("Referencia catastral no válida", "error")
+            return
+        authid = QgsProject.instance().crs().authid()
+        epsg = int(authid.split(":")[1]) if authid.startswith("EPSG:") and int(authid.split(":")[1]) in CATASTRO_EPSG else 25830
+        folder = tempfile.mkdtemp(prefix="gml_catastro_")
+        for kind, sq, name in [("parcela", "GetParcel", "Catastro %s" % rc[:14]), ("colindantes", "GetNeighbourParcel", "Colindantes %s" % rc[:14])]:
+            url = ("https://ovc.catastro.meh.es/INSPIRE/wfsCP.aspx?service=wfs&version=2.0.0&request=GetFeature"
+                   "&STOREDQUERIE_ID=%s&STOREDQUERY_ID=%s&refcat=%s&srsname=EPSG::%d" % (sq, sq, rc[:14], epsg))
+            try:
+                req = urllib.request.Request(url, headers={"User-Agent": "GML-EasySoftechnic"})
+                with urllib.request.urlopen(req, timeout=25) as r:
+                    data = r.read()
+            except Exception as e:  # noqa: BLE001
+                self.msg("No se ha podido consultar el Catastro: %s" % e, "error")
+                return
+            if b"ExceptionText" in data:
+                m = re.search(rb"<(?:ows:)?ExceptionText>(.*?)</", data, re.S)
+                self.msg("El Catastro responde: %s" % (m.group(1).decode("utf-8", "replace").strip() if m else "error"), "error")
+                return
+            path = os.path.join(folder, "%s.gml" % kind)
+            with open(path, "wb") as f:
+                f.write(data)
+            layer = QgsVectorLayer(path, name, "ogr")
+            if layer.isValid():
+                QgsProject.instance().addMapLayer(layer)
+                layer.setOpacity(1.0 if kind == "parcela" else 0.6)
+        self.msg("Parcela %s y colindantes cargados del Catastro" % rc[:14], "ok")
 
     # ---------- validar ----------
     def validate_selection(self):

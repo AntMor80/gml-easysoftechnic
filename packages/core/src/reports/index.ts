@@ -3,4 +3,5 @@ export { planSvg } from './svg.js';
 export type { PlanLayer } from './svg.js';
 export { coordinateReportDefinition, fechaLarga } from './coordinateReport.js';
 export { coordinateReportDocx, docxToBuffer } from './docx.js';
-export { validationReportDefinition, surfaceCertificateDefinition, graphicRepresentationDefinition } from './procedureReports.js';
+export { validationReportDefinition, surfaceCertificateDefinition, graphicRepresentationDefinition, colindantesReportDefinition } from './procedureReports.js';
+export type { Colindante } from './procedureReports.js';

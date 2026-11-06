@@ -13,6 +13,10 @@
     "./commerce": {
       "types": "./dist/commerce.d.ts",
       "import": "./dist/commerce.js"
+    },
+    "./catastro-urls": {
+      "types": "./dist/catastroUrls.d.ts",
+      "import": "./dist/catastroUrls.js"
     }
   },
   "scripts": {

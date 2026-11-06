@@ -10,7 +10,10 @@ await build({
   target: 'node18',
   format: 'esm',
   packages: 'external',
-  alias: { '@gml/core/commerce': fileURLToPath(new URL('../../packages/core/src/commerce.ts', import.meta.url)) },
+  alias: {
+    '@gml/core/commerce': fileURLToPath(new URL('../../packages/core/src/commerce.ts', import.meta.url)),
+    '@gml/core/catastro-urls': fileURLToPath(new URL('../../packages/core/src/catastroUrls.ts', import.meta.url)),
+  },
   banner: { js: "import { createRequire } from 'module'; const require = createRequire(import.meta.url);" },
 });
 console.log('Servidor empaquetado en dist/server.js');

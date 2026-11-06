@@ -14,4 +14,8 @@ export default defineConfig({
   },
   optimizeDeps: { include: ['pdfmake/build/pdfmake', 'pdfmake/build/vfs_fonts', 'docx', 'sql.js'] },
   build: { chunkSizeWarningLimit: 4000 },
+  // Sin servidor (iniciar-web.bat) las consultas al Catastro pasan por Vite, porque el
+  // Catastro no permite llamadas directas desde el navegador.
+  server: { proxy: { '/ovc': { target: 'https://ovc.catastro.meh.es', changeOrigin: true, rewrite: (p) => p.replace(/^\/ovc/, '') } } },
+  preview: { proxy: { '/ovc': { target: 'https://ovc.catastro.meh.es', changeOrigin: true, rewrite: (p) => p.replace(/^\/ovc/, '') } } },
 });

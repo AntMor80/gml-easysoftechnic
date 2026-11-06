@@ -232,3 +232,57 @@ export function graphicRepresentationDefinition(
     { text: declaracion },
   ]);
 }
+
+export interface Colindante {
+  refcat: string;
+  polygons: Polygon[];
+  direccion?: string;
+  uso?: string;
+  superficie?: number;
+}
+
+/**
+ * Relación de colindantes: parcelas catastrales vecinas con su referencia, localización,
+ * uso y superficie (datos públicos del Catastro; los titulares no son públicos y se
+ * obtienen con la certificación catastral).
+ */
+export function colindantesReportDefinition(data: ReportData & { colindantes: Colindante[]; direccionPrincipal?: string }): TDocumentDefinitions {
+  const palette = ['#c0392b', '#2e7d32', '#8e44ad', '#d35400', '#00838f', '#6d4c41', '#ad1457', '#283593'];
+  return frame(data, 'Relación de parcelas colindantes', [
+    { text: 'Parcela', style: 'h2' },
+    dataTable([...baseRows(data), ...(data.direccionPrincipal ? [['Localización (Catastro)', data.direccionPrincipal] as [string, string]] : [])]),
+    { text: 'Plano', style: 'h2' },
+    {
+      svg: planSvg([
+        { polygons: data.recintos.flatMap((r) => r.polygons), stroke: '#1f4e8c', fill: 'rgba(31,78,140,0.15)', label: 'P' },
+        ...data.colindantes.map((c, i) => ({ polygons: c.polygons, stroke: palette[i % palette.length]!, label: String(i + 1) })),
+      ]),
+      width: 490,
+    },
+    { text: `Colindantes (${data.colindantes.length})`, style: 'h2' },
+    data.colindantes.length
+      ? {
+          table: {
+            headerRows: 1,
+            widths: [18, 98, '*', 70, 52],
+            body: [
+              [{ text: 'Nº', style: 'th' }, { text: 'Referencia catastral', style: 'th' }, { text: 'Localización', style: 'th' }, { text: 'Uso', style: 'th' }, { text: 'Sup. (m²)', style: 'th', alignment: 'right' }],
+              ...data.colindantes.map((c, i) => [
+                String(i + 1),
+                { text: c.refcat, fontSize: 8.5 },
+                { text: c.direccion ?? '', fontSize: 8.5 },
+                { text: c.uso ?? '', fontSize: 8.5 },
+                { text: nf(c.superficie ?? totalArea(c.polygons), 0), alignment: 'right' as const },
+              ]),
+            ],
+          },
+          layout: 'lightHorizontalLines',
+        }
+      : { text: 'El Catastro no ha devuelto parcelas colindantes.' },
+    {
+      text: 'Datos obtenidos de los servicios públicos de la Dirección General del Catastro. La identidad de los titulares es un dato protegido y debe consultarse mediante certificación catastral.',
+      style: 'note',
+      margin: [0, 10, 0, 0],
+    },
+  ]);
+}

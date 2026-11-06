@@ -87,6 +87,27 @@ class Complemento(unittest.TestCase):
         self.plugin.import_gml()
         self.assertEqual(len(QgsProject.instance().mapLayers()), before + 1)
 
+    def test_carga_del_catastro(self):
+        import urllib.request
+        from qgis.PyQt.QtWidgets import QInputDialog
+        gml = open(os.path.join(TMP, "multi.gml"), "rb").read() if os.path.exists(os.path.join(TMP, "multi.gml")) else None
+        if gml is None:
+            self.test_exporta_parcela_y_la_relee()
+            gml = open(os.path.join(TMP, "multi.gml"), "rb").read()
+        class R:
+            def __init__(self, d): self.d = d
+            def read(self): return self.d
+            def __enter__(self): return self
+            def __exit__(self, *a): pass
+        seen = []
+        with mock.patch.object(QInputDialog, "getText", staticmethod(lambda *a, **k: ("1234567 vk1213s", True))), \
+             mock.patch.object(urllib.request, "urlopen", lambda req, timeout=0: (seen.append(req.full_url), R(gml))[1]):
+            before = len(QgsProject.instance().mapLayers())
+            self.plugin.load_catastro()
+        self.assertEqual(len(QgsProject.instance().mapLayers()), before + 2)
+        self.assertIn("GetNeighbourParcel", seen[1])
+        self.assertIn("refcat=1234567VK1213S", seen[1])
+
     def test_curvas_densificadas(self):
         f = list(self.layer.getFeatures())[1]
         polys = polygons_of(f.geometry())

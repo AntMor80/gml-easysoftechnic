@@ -1,4 +1,4 @@
-import { bbox, closeRing } from '../geometry.js';
+import { bbox, closeRing, signedArea } from '../geometry.js';
 import type { Point, Polygon } from '../types.js';
 
 export interface PlanLayer {
@@ -42,6 +42,13 @@ export function planSvg(layers: PlanLayer[], width = 500, height = 360): string 
       }
     }
   });
+  // Etiqueta de capa (p. ej. número de colindante) en el centro de su mayor recinto.
+  for (const l of layers) {
+    if (!l.label || !l.polygons.length) continue;
+    const big = l.polygons.reduce((a, b) => (Math.abs(signedArea(b.exterior)) > Math.abs(signedArea(a.exterior)) ? b : a));
+    const [x0, y0, x1, y1] = bbox(big.exterior);
+    parts.push(`<text x="${X((x0 + x1) / 2)}" y="${Number(Y((y0 + y1) / 2)) + 4}" font-size="11" font-weight="bold" text-anchor="middle" font-family="Helvetica" fill="${l.stroke}">${l.label.replace(/&/g, '&amp;').replace(/</g, '&lt;')}</text>`);
+  }
   for (const l of layers) {
     for (const [x, y] of l.markers ?? []) {
       parts.push(`<circle cx="${X(x)}" cy="${Y(y)}" r="7" fill="none" stroke="#c0392b" stroke-width="2"/>`);

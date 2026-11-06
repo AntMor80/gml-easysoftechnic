@@ -10,6 +10,7 @@ export const CREDIT_COST = {
   conversionV4: 1,
   paqueteDxf: 2,
   informe: 1,
+  colindantes: 1,
   exportacion: 0,
 } as const;
 export type CreditAction = keyof typeof CREDIT_COST;
@@ -20,6 +21,7 @@ export const CREDIT_ACTION_LABELS: Record<CreditAction, string> = {
   conversionV4: 'Conversión a GML v4',
   paqueteDxf: 'Paquete DXF → Catastro',
   informe: 'Informe',
+  colindantes: 'Colindantes del Catastro',
   exportacion: 'Exportación',
 };
 
@@ -56,6 +58,7 @@ export const ACTION_MODULE: Record<CreditAction, DesktopModule | null> = {
   conversionV4: 'exportacion',
   paqueteDxf: 'informes',
   informe: 'informes',
+  colindantes: 'informes',
   exportacion: 'exportacion',
 };
 

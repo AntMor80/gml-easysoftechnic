@@ -21,6 +21,7 @@ import {
   type DesktopModule,
   type LicensePlan,
 } from '@gml/core/commerce';
+import { catastroUrl, type CatastroQuery } from '@gml/core/catastro-urls';
 import type { Config } from './config.js';
 import type { License, Store, User } from './store.js';
 import type { Mailer } from './mailer.js';
@@ -32,6 +33,14 @@ export interface Deps {
   store: Store;
   mailer: Mailer;
   payments?: Payments;
+  /** Descarga de los servicios del Catastro (se sustituye en las pruebas). */
+  fetchText?: (url: string) => Promise<string>;
+}
+
+async function defaultFetchText(url: string): Promise<string> {
+  const res = await fetch(url, { signal: AbortSignal.timeout(20000), headers: { 'User-Agent': 'GML-EasySoftechnic' } });
+  if (!res.ok) throw new HttpError(502, `El Catastro no responde (error ${res.status})`);
+  return res.text();
 }
 
 const COOKIE = 'gml_sesion';
@@ -63,7 +72,7 @@ const h =
   (req: Request, res: Response, next: NextFunction) =>
     fn(req, res).catch(next);
 
-export function createApp({ cfg, store, mailer, payments }: Deps) {
+export function createApp({ cfg, store, mailer, payments, fetchText = defaultFetchText }: Deps) {
   const app = express();
   app.disable('x-powered-by');
   app.set('trust proxy', 1);
@@ -391,6 +400,51 @@ export function createApp({ cfg, store, mailer, payments }: Deps) {
       cfg.licensePrivateKey,
     );
   }
+
+  // ---------- Catastro ----------
+  // El navegador no puede llamar directamente a los servicios del Catastro (no permiten CORS):
+  // el servidor hace de intermediario, solo hacia direcciones fijas y con caché de 10 minutos.
+  const cache = new Map<string, { at: number; text: string }>();
+  const hits = new Map<number, { minute: number; n: number }>();
+  api.get(
+    '/catastro',
+    h(async (req, res) => {
+      const u = (req as AuthedRequest).user;
+      const minute = Math.floor(Date.now() / 60000);
+      const c = hits.get(u.id);
+      if (c && c.minute === minute && c.n >= 60) throw new HttpError(429, 'Demasiadas consultas al Catastro; espera un minuto');
+      hits.set(u.id, c && c.minute === minute ? { minute, n: c.n + 1 } : { minute, n: 1 });
+      const q = req.query as Record<string, string>;
+      let url: string;
+      try {
+        const kind = q.kind as CatastroQuery['kind'];
+        url = catastroUrl(
+          kind === 'punto'
+            ? { kind, x: Number(q.x), y: Number(q.y), epsg: Number(q.epsg) }
+            : kind === 'datos'
+              ? { kind, refcat: String(q.refcat ?? '') }
+              : kind === 'parcela' || kind === 'colindantes'
+                ? { kind, refcat: String(q.refcat ?? ''), epsg: Number(q.epsg) }
+                : (() => { throw new Error('Consulta desconocida'); })(),
+        );
+      } catch (e) {
+        throw new HttpError(400, (e as Error).message);
+      }
+      const hit = cache.get(url);
+      let text: string;
+      if (hit && Date.now() - hit.at < 600_000) text = hit.text;
+      else {
+        try {
+          text = await fetchText(url);
+        } catch (e) {
+          throw e instanceof HttpError ? e : new HttpError(502, 'No se ha podido conectar con el Catastro; inténtalo de nuevo');
+        }
+        if (cache.size > 500) cache.clear();
+        cache.set(url, { at: Date.now(), text });
+      }
+      res.type('application/xml').send(text);
+    }),
+  );
 
   // ---------- administración (correos en ADMIN_EMAILS) ----------
   const adminOnly = (req: Request, _res: Response, next: NextFunction) =>

@@ -15,6 +15,7 @@ interface Bridge {
   deactivate(): Promise<DesktopLicense>;
   refresh(): Promise<DesktopLicense>;
   openShop(): Promise<void>;
+  fetchCatastro?(url: string): Promise<string>;
   onLicenseChanged(cb: (l: DesktopLicense) => void): void;
   onShowLicense(cb: () => void): void;
 }

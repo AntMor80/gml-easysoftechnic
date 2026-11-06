@@ -18,3 +18,4 @@ export * from './export/index.js';
 export * from './reports/index.js';
 export * from './snap.js';
 export * from './commerce.js';
+export * from './catastro.js';
