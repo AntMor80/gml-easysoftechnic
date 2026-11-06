@@ -9,6 +9,7 @@ import {
   selfIntersections,
   verticesOutside,
 } from './geometry.js';
+import polygonClipping from 'polygon-clipping';
 import type { Issue, Polygon } from './types.js';
 
 export interface ValidateOptions {
@@ -16,6 +17,8 @@ export interface ValidateOptions {
   minVertexDistance?: number;
   /** Superficie mínima de un recinto (m²). */
   minArea?: number;
+  /** Solape mínimo que se considera error (m²). */
+  overlapTolerance?: number;
 }
 
 const RC_14 = /^[0-9A-Z]{14}$/;
@@ -73,12 +76,46 @@ export function validatePolygons(polys: Polygon[], opts: ValidateOptions = {}): 
   // solapes entre recintos distintos
   for (let a = 0; a < polys.length; a++) {
     for (let b = a + 1; b < polys.length; b++) {
-      if (polygonsOverlap(polys[a]!, polys[b]!)) {
-        issues.push({ code: 'OVERLAP', severity: 'error', message: `Los recintos ${a + 1} y ${b + 1} se solapan.`, polygon: a });
+      const ov = overlapArea(polys[a]!, polys[b]!);
+      if (ov > (opts.overlapTolerance ?? 0.0001)) {
+        issues.push({ code: 'OVERLAP', severity: 'error', message: `Los recintos ${a + 1} y ${b + 1} se solapan ${ov.toFixed(4)} m².`, polygon: a });
       }
     }
   }
   return issues;
+}
+
+type PcPoly = [number, number][][];
+const toPc = (p: Polygon): PcPoly => [closeRing(p.exterior), ...p.interiors.map((r) => closeRing(r))];
+
+function ringsArea(mp: PcPoly[]): number {
+  const a = (r: [number, number][]) => {
+    let s = 0;
+    for (let i = 0; i < r.length - 1; i++) s += r[i]![0] * r[i + 1]![1] - r[i + 1]![0] * r[i]![1];
+    return Math.abs(s / 2);
+  };
+  return mp.reduce((t, poly) => t + a(poly[0]!) - poly.slice(1).reduce((h, r) => h + a(r), 0), 0);
+}
+
+/** Superficie común entre dos recintos (m²). Los bordes compartidos no suman. */
+export function overlapArea(a: Polygon, b: Polygon): number {
+  return ringsArea(polygonClipping.intersection(toPc(a), toPc(b)) as PcPoly[]);
+}
+
+/**
+ * Solapes entre los elementos de varios archivos (p. ej. viviendas colindantes):
+ * devuelve cada par que se solapa y su superficie.
+ */
+export function crossOverlaps(items: { id: string; polygons: Polygon[] }[], tolerance = 0.0001) {
+  const out: { a: string; b: string; area: number }[] = [];
+  for (let i = 0; i < items.length; i++) {
+    for (let j = i + 1; j < items.length; j++) {
+      let area = 0;
+      for (const pa of items[i]!.polygons) for (const pb of items[j]!.polygons) area += overlapArea(pa, pb);
+      if (area > tolerance) out.push({ a: items[i]!.id, b: items[j]!.id, area });
+    }
+  }
+  return out;
 }
 
 /** Solape de interiores (los bordes compartidos no cuentan como solape). */

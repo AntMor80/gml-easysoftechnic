@@ -6,3 +6,4 @@ dist/
 coverage/
 __pycache__/
 test/.out/
+packages/core/test/fixtures/real/

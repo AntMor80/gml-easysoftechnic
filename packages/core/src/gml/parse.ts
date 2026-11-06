@@ -186,13 +186,22 @@ export function parseGml(xml: string): ParsedGml {
     collectPolygons(node['geometry'] ?? node, swap, polygons);
     const idNode = (node['inspireId'] as Node | undefined)?.['Identifier'] as Node | undefined;
     const area = text(node['areaValue']);
+    if (area && area.includes(',')) {
+      warnings.push(`La superficie declarada (${area}) usa coma decimal; el esquema del Catastro exige punto. Se corregirá al reescribir el GML.`);
+    }
+    const gmlId = node['@id'] as string | undefined;
+    const ns = text(idNode?.['namespace']);
+    const lid = text(idNode?.['localId']);
+    if (gmlId && ns && lid && gmlId !== `${ns}.${lid}`) {
+      warnings.push(`El identificador gml:id "${gmlId}" no coincide con el espacio de nombres y el localId (${ns}.${lid}).`);
+    }
     return {
       kind,
       gmlId: node['@id'] as string | undefined,
       localId: text(idNode?.['localId']),
       namespace: text(idNode?.['namespace']),
       polygons,
-      declaredArea: area !== undefined ? Number(area) : undefined,
+      declaredArea: area !== undefined ? Number(area.replace(',', '.')) : undefined,
       computedArea: totalArea(polygons),
       attributes: simpleAttributes(node),
     };
