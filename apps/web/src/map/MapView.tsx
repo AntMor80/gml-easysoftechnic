@@ -76,7 +76,9 @@ export function MapView({ items, epsg, selected, markers, base, catastro, onSele
     new ImageLayer({
       source: new ImageWMS({
         url: 'https://ovc.catastro.meh.es/Cartografia/WMS/ServidorWMS.aspx',
-        params: { LAYERS: 'Catastro', FORMAT: 'image/png', TRANSPARENT: true },
+        // Versión 1.1.1 y TRANSPARENT en mayúsculas: es lo que el servidor del Catastro
+        // acepta sin problemas en EPSG:3857.
+        params: { SERVICE: 'WMS', VERSION: '1.1.1', LAYERS: 'Catastro', STYLES: '', FORMAT: 'image/png', TRANSPARENT: 'TRUE' },
         ratio: 1,
         attributions: 'Dirección General del Catastro',
       }),
@@ -86,6 +88,8 @@ export function MapView({ items, epsg, selected, markers, base, catastro, onSele
       minZoom: 15,
     }),
   );
+  const [catStatus, setCatStatus] = useState<'idle' | 'loading' | 'ok' | 'error'>('idle');
+  const [zoom, setZoom] = useState(6);
   const [cursor, setCursor] = useState<string>('');
   const cb = useRef({ onSelect, onMapClick, epsg });
   cb.current = { onSelect, onMapClick, epsg };
@@ -107,6 +111,11 @@ export function MapView({ items, epsg, selected, markers, base, catastro, onSele
       const p = transform(e.coordinate, 'EPSG:3857', `EPSG:${cb.current.epsg}`);
       cb.current.onMapClick?.([p[0]!, p[1]!]);
     });
+    const src = catLayer.current.getSource()!;
+    src.on('imageloadstart', () => setCatStatus('loading'));
+    src.on('imageloadend', () => setCatStatus('ok'));
+    src.on('imageloaderror', () => setCatStatus('error'));
+    m.getView().on('change:resolution', () => setZoom(m.getView().getZoom() ?? 0));
     map.current = m;
     return () => m.setTarget(undefined);
   }, []);
@@ -161,6 +170,17 @@ export function MapView({ items, epsg, selected, markers, base, catastro, onSele
     <div className="map-wrap">
       <div ref={div} className="map" />
       <div className="cursor">{cursor} · EPSG:{epsg}</div>
+      {catastro && (
+        <div className={`cat-status ${catStatus === 'error' ? 'err' : ''}`}>
+          {zoom < 15
+            ? 'Catastro: acércate para verlo'
+            : catStatus === 'loading'
+              ? 'Catastro: cargando…'
+              : catStatus === 'error'
+                ? 'Catastro: el servidor no responde (puede estar saturado)'
+                : 'Catastro'}
+        </div>
+      )}
     </div>
   );
 }
