@@ -10,3 +10,4 @@ Motor común. Funciones principales:
 - `linesToPolygons`, `polygonsToLines`, `densifyArc`: geometría.
 - `transformPoint`, `helmert2D`: husos, sistemas de referencia y catastro desplazado.
 - `toGeoJson`, `fromGeoJson`, `toKml`, `toKmz`, `toShapefileZip`, `toXlsx`, `coordinatesWorkbook`: exportación a GeoJSON, KML/KMZ, Shapefile y Excel.
+- `coordinateReportDefinition`, `coordinateReportDocx`, `planSvg`: informe de coordenadas georreferenciadas en PDF (pdfmake) y Word (docx), con plano a escala.
