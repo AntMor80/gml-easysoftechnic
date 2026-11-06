@@ -72,7 +72,7 @@ export function App() {
             <option value="mtn">Mapa topográfico IGN</option>
             <option value="osm">OpenStreetMap</option>
           </select>
-          <label><input type="checkbox" checked={catastro} onChange={(e) => setCatastro(e.target.checked)} /> Catastro</label>
+          <label title="Las parcelas del Catastro aparecen al acercarse a escala de calle"><input type="checkbox" checked={catastro} onChange={(e) => setCatastro(e.target.checked)} /> Catastro (al acercar)</label>
           <button onClick={() => setFitKey((k) => k + 1)} disabled={!state.items.length}>Ver todo</button>
         </div>
         <div className="credits">{DEV_MODE ? 'Modo desarrollo · sin cobro' : 'Créditos'}</div>

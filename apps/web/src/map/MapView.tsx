@@ -58,6 +58,9 @@ export function MapView({ items, epsg, selected, markers, base, catastro, onSele
     new TileLayer({
       source: new TileWMS({ url: 'https://ovc.catastro.meh.es/Cartografia/WMS/ServidorWMS.aspx', params: { LAYERS: 'Catastro', FORMAT: 'image/png', TRANSPARENT: true }, attributions: 'Dirección General del Catastro' }),
       zIndex: 1,
+      // El WMS del Catastro solo dibuja parcelas a escala de detalle; a menor zoom
+      // devuelve imágenes en blanco que tapan la ortofoto.
+      minZoom: 15,
     }),
   );
   const [cursor, setCursor] = useState<string>('');
