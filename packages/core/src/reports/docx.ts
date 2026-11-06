@@ -63,6 +63,11 @@ export function coordinateReportDocx(data: ReportData): Document {
   });
 }
 
-export function docxToBuffer(doc: Document): Promise<Uint8Array> {
-  return Packer.toBuffer(doc).then((b) => new Uint8Array(b));
+/** Bytes del .docx; funciona en el navegador (Blob) y en Node (Buffer). */
+export async function docxToBuffer(doc: Document): Promise<Uint8Array> {
+  if (typeof window !== 'undefined' && typeof Blob !== 'undefined') {
+    const blob = await Packer.toBlob(doc);
+    return new Uint8Array(await blob.arrayBuffer());
+  }
+  return new Uint8Array(await Packer.toBuffer(doc));
 }
