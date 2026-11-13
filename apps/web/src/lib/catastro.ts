@@ -13,14 +13,21 @@ export async function fetchCatastro(q: CatastroQuery): Promise<string> {
   if (desktop?.fetchCatastro) return desktop.fetchCatastro(url);
   let res: Response;
   try {
-    if (DEV_MODE) {
+    if (location.protocol === 'file:') {
+      // Archivo HTML abierto desde el disco: se intenta la llamada directa.
+      res = await fetch(url);
+    } else if (DEV_MODE) {
       res = await fetch(url.replace(`https://${CATASTRO_HOST}`, '/ovc'));
     } else {
       const params = new URLSearchParams(Object.entries(q).map(([k, v]) => [k, String(v)]));
       res = await fetch(`/api/catastro?${params}`, { credentials: 'same-origin' });
     }
   } catch {
-    throw new Error('No se ha podido conectar con el Catastro.');
+    throw new Error(
+      location.protocol === 'file:'
+        ? 'El Catastro no permite consultas desde un archivo abierto en el ordenador. Esta pestaña funciona con iniciar-web.bat, con la web publicada o con la aplicación de escritorio.'
+        : 'No se ha podido conectar con el Catastro.',
+    );
   }
   const text = await res.text();
   if (!res.ok) {

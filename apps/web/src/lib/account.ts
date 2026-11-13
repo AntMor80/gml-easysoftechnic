@@ -43,6 +43,12 @@ export function useAccount() {
 
   useEffect(() => {
     void (async () => {
+      if (location.protocol === 'file:') {
+        // Archivo HTML abierto desde el disco: siempre modo de prueba, sin cuentas ni cobros.
+        setOnline(false);
+        setDevMode(true);
+        return;
+      }
       try {
         setCatalog(await api<Catalog>('/api/catalog'));
         setOnline(true);
