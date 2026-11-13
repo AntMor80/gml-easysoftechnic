@@ -35,8 +35,15 @@ export function ReportsPanel({ state }: { state: State }) {
     } catch { /* sin almacenamiento local */ }
   }, [f]);
   const set = (k: keyof Form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setF({ ...f, [k]: e.target.value });
-  const main = state.items.filter((i) => i.role !== 'referencia' && i.visible);
-  const refs = state.items.filter((i) => i.role === 'referencia');
+  const own = state.items.filter((i) => i.role !== 'referencia' && i.visible);
+  const allRefs = state.items.filter((i) => i.role === 'referencia');
+  // Si solo hay parcelas traídas del Catastro, los informes se hacen sobre la parcela catastral
+  // (la seleccionada, o la "parcela actual" cargada en la pestaña Catastro).
+  const sel = allRefs.find((i) => i.uid === state.selected);
+  const catParcel = allRefs.filter((i) => i.source === 'Catastro · parcela actual');
+  const fallback = own.length ? [] : sel ? [sel] : catParcel.length ? catParcel : allRefs.slice(0, 1);
+  const main = own.length ? own : fallback;
+  const refs = own.length ? allRefs : allRefs.filter((i) => !fallback.includes(i));
 
   const data = (): ReportData => {
     const issues = runValidation(state, 0.005).flatMap((x) => x.issues);
@@ -72,7 +79,7 @@ export function ReportsPanel({ state }: { state: State }) {
     if (!(await charge('paqueteDxf'))) return;
     const d = data();
     const E = state.epsg;
-    const parcels = state.items.filter((i) => i.role === 'parcela');
+    const parcels = own.length ? state.items.filter((i) => i.role === 'parcela') : main;
     const builds = state.items.filter((i) => i.role === 'edificio');
     const pools = state.items.filter((i) => i.role === 'piscina');
     const files: Record<string, Uint8Array> = {};
@@ -107,7 +114,9 @@ export function ReportsPanel({ state }: { state: State }) {
       <input placeholder="Registro de la Propiedad" value={f.registro} onChange={set('registro')} />
       <textarea placeholder="Observaciones" value={f.observaciones} onChange={set('observaciones')} rows={2} />
       <h3>Documentos</h3>
-      {refs.length === 0 && <p className="hint">Marca un recinto como «Referencia» para compararlo con el Catastro en los informes.</p>}
+      {!state.items.length && <p className="bad">Primero carga un archivo (pestaña Archivos) o trae la parcela del Catastro (pestaña Catastro). Los datos de arriba son opcionales.</p>}
+      {fallback.length > 0 && <p className="hint">No hay recintos propios: los informes se harán sobre la parcela del Catastro <strong>{fallback.map((i) => i.id).join(', ')}</strong>. Para documentar tu medición, carga tu archivo (DXF, GML, coordenadas) o cambia el papel de un recinto en Archivos.</p>}
+      {own.length > 0 && refs.length === 0 && <p className="hint">Consejo: trae la parcela del Catastro (pestaña Catastro) para que los informes comparen tu medición con la catastral.</p>}
       {reports.map((r) => (
         <button key={r.label} disabled={!main.length || !!busy} onClick={() => run(r.label, async () => { if (await charge('informe')) await r.go(); })}>{busy === r.label ? 'Generando…' : r.label}</button>
       ))}

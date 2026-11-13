@@ -10,4 +10,5 @@ contextBridge.exposeInMainWorld('gmlDesktop', {
   fetchCatastro: (url) => ipcRenderer.invoke('catastro:fetch', url),
   onLicenseChanged: (cb) => ipcRenderer.on('license:changed', (_e, lic) => cb(lic)),
   onShowLicense: (cb) => ipcRenderer.on('license:show', () => cb()),
+  onShowHelp: (cb) => ipcRenderer.on('help:show', () => cb()),
 });

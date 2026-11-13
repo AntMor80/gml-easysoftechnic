@@ -11,6 +11,7 @@ import { ExportPanel } from './panels/ExportPanel';
 import { ReportsPanel } from './panels/ReportsPanel';
 import { AccountPanel } from './panels/AccountPanel';
 import { CatastroPanel } from './panels/CatastroPanel';
+import { HelpPanel, type HelpSection } from './panels/HelpPanel';
 import { useAccount } from './lib/account';
 import { LicensePanel } from './panels/LicensePanel';
 import { desktop, setDesktopModules, type DesktopLicense } from './lib/desktop';
@@ -43,6 +44,7 @@ export function App() {
     void desktop.getLicense().then(apply);
     desktop.onLicenseChanged(apply);
     desktop.onShowLicense(() => setTab('account'));
+    desktop.onShowHelp?.(() => setHelp('inicio'));
   }, []);
   const notify = useCallback((kind: 'info' | 'error', text: string) => dispatch({ type: 'message', kind, text }), []);
   // Avisos de cobro que lanzan los paneles (sin sesión o sin créditos): se muestran y se abre Mi cuenta.
@@ -71,6 +73,7 @@ export function App() {
   const activeOverlays = Object.values(overlays).filter(Boolean).length + (catastro ? 1 : 0);
   const [fitKey, setFitKey] = useState(0);
   const [clicked, setClicked] = useState<[number, number]>();
+  const [help, setHelp] = useState<HelpSection | null>(null);
   const [dragging, setDragging] = useState(false);
   const input = useRef<HTMLInputElement>(null);
 
@@ -136,6 +139,7 @@ export function App() {
           </details>
           <button onClick={() => setFitKey((k) => k + 1)} disabled={!state.items.length}>Ver todo</button>
         </div>
+        <button className="help-btn" onClick={() => setHelp(tab as HelpSection)} title="Cómo funciona cada apartado">Ayuda</button>
         <button className="credits" onClick={() => setTab('account')}>
           {desktop ? (lic?.status === 'ok' ? `Licencia: ${lic.modules.length} módulo(s)` : 'Sin licencia') : account.online === false ? 'Modo desarrollo · sin cobro' : account.me ? `${account.me.user.credits} créditos` : account.online ? 'Entrar' : '…'}
         </button>
@@ -156,6 +160,7 @@ export function App() {
           {tab === 'account' && (desktop ? <LicensePanel lic={lic} notify={notify} /> : <AccountPanel account={account} notify={notify} />)}
         </aside>
       </main>
+      {help && <HelpPanel section={help} onClose={() => setHelp(null)} />}
       {state.messages.length > 0 && (
         <div className="toasts" onClick={() => dispatch({ type: 'clearMessages' })} title="Pulsa para cerrar">
           {state.messages.map((m, i) => <div key={i} className={m.kind}>{m.text}</div>)}

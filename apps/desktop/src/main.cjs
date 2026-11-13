@@ -109,6 +109,7 @@ function buildMenu(lic) {
     {
       label: 'Ayuda',
       submenu: [
+        { label: 'Manual de uso', accelerator: 'F1', click: () => win?.webContents.send('help:show') },
         { label: 'Activar licencia…', click: () => win?.webContents.send('license:show') },
         { label: 'Comprar o renovar licencia', click: () => shell.openExternal(`${SERVER}/#cuenta`) },
         { type: 'separator' },

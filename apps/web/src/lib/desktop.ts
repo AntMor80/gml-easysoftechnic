@@ -18,6 +18,7 @@ interface Bridge {
   fetchCatastro?(url: string): Promise<string>;
   onLicenseChanged(cb: (l: DesktopLicense) => void): void;
   onShowLicense(cb: () => void): void;
+  onShowHelp?(cb: () => void): void;
 }
 
 /** Presente solo dentro de la aplicación de escritorio (lo inyecta preload.cjs). */

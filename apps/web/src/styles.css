@@ -16,6 +16,7 @@ header { display: flex; align-items: center; gap: 16px; padding: 8px 16px; backg
 .brand { font-weight: 700; font-size: 17px; }
 .brand span { color: var(--accent); }
 .layers { display: flex; gap: 10px; align-items: center; flex: 1; flex-wrap: wrap; }
+.help-btn { margin-left: auto; text-align: center; }
 .credits { font-size: 12px; color: var(--muted); border: 1px solid var(--line); border-radius: 999px; padding: 3px 10px; }
 main { flex: 1; display: flex; min-height: 0; }
 .map-wrap { flex: 1; position: relative; min-width: 0; }
@@ -82,3 +83,17 @@ a { color: var(--accent); }
 .checks { display: flex; flex-direction: column; gap: 4px; }
 label.check { flex-direction: row; align-items: center; gap: 6px; color: var(--text); font-size: 13px; }
 button.credits { cursor: pointer; text-align: center; }
+
+.help-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.35); z-index: 50; display: flex; align-items: center; justify-content: center; padding: 16px; }
+.help { background: var(--panel); color: var(--text); width: min(1000px, 100%); height: min(86vh, 900px); border-radius: 10px; display: flex; flex-direction: column; box-shadow: 0 10px 40px rgba(0,0,0,.3); overflow: hidden; }
+.help > header { display: flex; justify-content: space-between; align-items: center; padding: 10px 16px; border-bottom: 1px solid var(--line); }
+.help-cols { flex: 1; display: grid; grid-template-columns: 210px 1fr; min-height: 0; }
+.help-cols nav { border-right: 1px solid var(--line); border-bottom: 0; overflow: auto; padding: 8px; display: flex; flex-direction: column; flex-wrap: nowrap; gap: 2px; }
+.help-cols nav button { flex: none; border: none; background: none; padding: 6px 8px; text-align: left; color: var(--text); border-radius: 6px; }
+.help-cols nav button:hover { background: var(--line); }
+.help-body { overflow: auto; padding: 4px 22px 40px; font-size: 14px; line-height: 1.5; }
+.help-body h2 { font-size: 18px; margin: 22px 0 6px; }
+.help-body h3 { font-size: 14.5px; margin: 14px 0 4px; }
+.help-body li { margin: 3px 0; }
+.help-body section { scroll-margin-top: 8px; }
+@media (max-width: 700px) { .help-cols { grid-template-columns: 1fr; } .help-cols nav { display: none; } }
